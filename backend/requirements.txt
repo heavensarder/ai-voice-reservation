@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+websockets
+python-multipart
+openai
+google-cloud-texttospeech
+python-dotenv
+httpx
+sqlalchemy
+pymysql
+cryptography
+
