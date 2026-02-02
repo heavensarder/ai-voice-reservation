@@ -109,43 +109,110 @@ async def websocket_endpoint(websocket: WebSocket):
                         "content": transcript
                     })
                     
-                    # Get AI Response
-                    ai_response_text, updated_history = await get_ai_response(transcript, conversation_history)
+                    # Get AI Response (Unpacking 3 values now)
+                    intermediate_text, ai_response_text, updated_history = await get_ai_response(transcript, conversation_history)
                     conversation_history = updated_history
                     
+                    # 1. Handle Intermediate "Checking" Message (if any)
+                    if intermediate_text:
+                        logger.info(f"Intermediate AI: {intermediate_text}")
+                        # Send text
+                        await websocket.send_json({
+                            "type": "text",
+                            "role": "ai",
+                            "content": intermediate_text
+                        })
+                        # TTS for intermediate part
+                        audio_partial = await synthesize_speech(intermediate_text)
+                        if audio_partial:
+                            await websocket.send_bytes(audio_partial)
+
+                    # 2. Handle Final Response
                     logger.info(f"AI: {ai_response_text}")
 
-                    # Check for RESERVATION_CONFIRMED
-                    if "[RESERVATION_CONFIRMED]" in ai_response_text:
-                        parts = ai_response_text.split("[RESERVATION_CONFIRMED]")
-                        spoken_text = parts[0].strip()
-                        json_str = parts[1].strip()
+                    # Track if we handled the response via special tags
+                    handled = False
+
+                    # Check for REVIEW_DETAILS (Before confirmation)
+                    if "[REVIEW_DETAILS]" in ai_response_text:
+                        handled = True
+                        # Robust "Extract & Subtract" Strategy
+                        # 1. capture JSON
+                        json_str = ""
+                        start_idx = ai_response_text.find('{')
+                        end_idx = ai_response_text.rfind('}')
                         
-                        # Send the spoken text as usual
+                        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                            json_str = ai_response_text[start_idx : end_idx + 1]
+                        
+                        # 2. construct spoken text by removing JSON and Tag
+                        spoken_text = ai_response_text
+                        if json_str:
+                            spoken_text = spoken_text.replace(json_str, "")
+                        
+                        spoken_text = spoken_text.replace("[REVIEW_DETAILS]", "")
+                        spoken_text = spoken_text.replace("*", "") # Remove markdown bolds
+                        spoken_text = spoken_text.strip()
+
+                        if not spoken_text:
+                            spoken_text = "Here are the details. Shall I confirm?" # Default fallback
+
+                        # Send text
                         await websocket.send_json({
                             "type": "text",
                             "role": "ai",
                             "content": spoken_text
                         })
                         
-                        # Synthesize audio for the spoken part
+                        # TTS for spoken part
                         audio_response = await synthesize_speech(spoken_text)
                         if audio_response:
                             await websocket.send_bytes(audio_response)
                         
-                        # Parse JSON and send structured event
-                        try:
-                            reservation_data = json.loads(json_str)
+                        # Parse JSON and send event
+                        if json_str:
+                            try:
+                                review_data = json.loads(json_str)
+                                await websocket.send_json({
+                                    "type": "review_details",
+                                    "data": review_data
+                                })
+                                logger.info(f"Review Data: {review_data}")
+                            except json.JSONDecodeError:
+                                logger.error(f"Failed to parse review JSON: {json_str[:20]}...")
+                        else:
+                             logger.error("No JSON found in REVIEW_DETAILS response")
+
+                    # Check for CONFIRM_RESERVATION (Final)
+                    if "[CONFIRM_RESERVATION]" in ai_response_text:
+                        handled = True
+                        parts = ai_response_text.split("[CONFIRM_RESERVATION]")
+                        spoken_text = parts[0].strip()
+                        
+                        # Default confirmation message if AI is silent
+                        if not spoken_text:
+                            spoken_text = "রিজার্ভেশন কনফার্ম করা হয়েছে। ধন্যবাদ।"
+
+                        # Send the spoken text if any (e.g. "Okay, confirmed.")
+                        if spoken_text:
                             await websocket.send_json({
-                                "type": "reservation_confirmed",
-                                "data": reservation_data
+                                "type": "text",
+                                "role": "ai",
+                                "content": spoken_text
                             })
-                            logger.info(f"Reservation Data: {reservation_data}")
-                        except json.JSONDecodeError:
-                            logger.error("Failed to parse reservation JSON")
+                            audio_response = await synthesize_speech(spoken_text)
+                            if audio_response:
+                                await websocket.send_bytes(audio_response)
+                        
+                        # Send trigger event (data is null, frontend must use stored reviewData)
+                        await websocket.send_json({
+                            "type": "reservation_confirmed",
+                            "data": None 
+                        })
+                        logger.info("Sent confirmation trigger")
                             
-                    else:
-                        # Normal response
+                    # Normal response (Only if not handled by special tags)
+                    if not handled:
                         await websocket.send_json({
                             "type": "text",
                             "role": "ai",

@@ -22,7 +22,7 @@ async def transcribe_audio(audio_bytes: bytes) -> str:
         transcript = await client.audio.transcriptions.create(
             model="whisper-1", 
             file=audio_file,
-            language="bn" # Force Bangla
+            prompt="Bengali, English conversation."
         )
         
         return transcript.text

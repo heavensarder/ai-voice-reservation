@@ -3,6 +3,12 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
+import { revalidatePath } from 'next/cache';
+
+export interface LoginState {
+    error?: string;
+    success?: boolean;
+}
 
 const prisma = new PrismaClient();
 
@@ -54,6 +60,16 @@ export async function updateConfig(prevState: any, formData: FormData) {
             });
         }
 
+        const systemPrompt = formData.get('SYSTEM_PROMPT') as string;
+        if (systemPrompt) {
+             await prisma.systemConfig.upsert({
+                where: { key: 'SYSTEM_PROMPT' },
+                update: { value: systemPrompt },
+                create: { key: 'SYSTEM_PROMPT', value: systemPrompt }
+            });
+        }
+
+        revalidatePath('/admin/settings');
         return { success: true, message: 'Configuration Updated' };
     } catch (error) {
         return { error: 'Failed to update config' };

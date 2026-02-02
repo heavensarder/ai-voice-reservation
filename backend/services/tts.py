@@ -39,8 +39,8 @@ async def synthesize_speech(text: str) -> bytes:
         # Build the voice request, select the language code ("bn-BD") and the ssml
         # voice gender ("NEUTRAL")
         voice = texttospeech.VoiceSelectionParams(
-            language_code="bn-BD",
-            name="bn-BD-Wavenet-A", # Wavenet is higher quality
+            language_code="bn-IN",
+            name="bn-IN-Standard-A", # Wavenet is higher quality
             ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
         )
 

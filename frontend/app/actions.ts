@@ -41,12 +41,25 @@ export async function saveReservation(data: {
     }
 }
 
-export async function getReservations() {
+export async function getReservations(dateStr?: string) {
+    const whereClause = dateStr ? { date: dateStr } : {};
+    
     return await prisma.reservation.findMany({
+        where: whereClause,
         orderBy: {
             createdAt: 'desc'
         }
     });
+}
+
+export async function getAllBookedDates() {
+    const reservations = await prisma.reservation.findMany({
+        select: {
+            date: true
+        },
+        distinct: ['date']
+    });
+    return reservations.map(r => r.date);
 }
 
 export async function deleteReservation(id: number) {
