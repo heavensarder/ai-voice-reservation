@@ -51,7 +51,7 @@ export default function ConfigForm({ initialConfig }: { initialConfig: Record<st
                     <div className="space-y-3">
                         <label className="block text-sm font-medium text-foreground/80">
                             OpenAI API Key
-                            <span className="ml-2 text-xs text-muted-foreground font-normal">(GPT-4o-mini & Whisper)</span>
+                            <span className="ml-2 text-xs text-muted-foreground font-normal">(GPT-4o-mini as LLM)</span>
                         </label>
                         <input
                             name="OPENAI_API_KEY"
@@ -65,7 +65,7 @@ export default function ConfigForm({ initialConfig }: { initialConfig: Record<st
                     <div className="space-y-3">
                         <label className="block text-sm font-medium text-foreground/80">
                             Google Cloud Credentials
-                            <span className="ml-2 text-xs text-muted-foreground font-normal">(TTS + Bengali Speech Recognition)</span>
+                            <span className="ml-2 text-xs text-muted-foreground font-normal">(TTS + STT for Bengali Speech Recognition)</span>
                         </label>
                         <textarea
                             name="GOOGLE_TTS_CREDENTIALS"
