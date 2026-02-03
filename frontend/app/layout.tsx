@@ -26,7 +26,7 @@ export default function RootLayout({
     <html lang="en" className="light" style={{ colorScheme: 'light' }}>
       <body
         suppressHydrationWarning
-        className={`${inter.variable} ${anekBangla.variable} antialiased bg-background text-foreground min-h-screen flex flex-col`}
+        className={`${inter.variable} ${anekBangla.variable} antialiased bg-background text-foreground min-h-screen flex flex-col overflow-x-hidden`}
       >
         {children}
       </body>

@@ -51,7 +51,7 @@ export default function Home() {
           </div>
 
           <div className="hidden md:flex items-center gap-8 font-medium text-sm">
-            {['Home', 'About', 'Menu', 'Contact'].map((item) => (
+            {['Home', 'About', 'Menu', 'Gallery', 'Contact'].map((item) => (
               <Link
                 key={item}
                 href={`#${item.toLowerCase()}`}
@@ -86,6 +86,7 @@ export default function Home() {
             className="object-cover brightness-[0.6]" // Darken for text readability
             priority
           />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70 mix-blend-multiply" />
         </div>
 
         <div className="container relative z-10 px-4 text-center md:text-left text-white max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
@@ -363,8 +364,86 @@ export default function Home() {
         </div>
       </section>
 
+      {/* --- Gallery Section --- */}
+      <section id="gallery" className="py-20 bg-slate-50">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="text-center mb-16">
+            <span className="text-emerald-600 font-bold uppercase tracking-wider text-sm block mb-2">Our Atmosphere</span>
+            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900">Capture the Moments</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4 h-[1000px] md:h-[600px]">
+            {/* Large item - Main Feature */}
+            <div className="md:col-span-2 md:row-span-2 relative rounded-3xl overflow-hidden group">
+              <Image
+                src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80"
+                alt="Restaurant Interior"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors"></div>
+              <div className="absolute bottom-6 left-6 text-white p-4">
+                <span className="bg-emerald-600 text-white text-xs font-bold px-2 py-1 rounded-md mb-2 inline-block">Featured</span>
+                <p className="font-bold text-2xl mb-1">Cozy Ambience</p>
+                <p className="text-sm opacity-90">Perfect for family gatherings</p>
+              </div>
+            </div>
+
+            {/* Top Row - 2 items */}
+            <div className="relative rounded-3xl overflow-hidden group">
+              <Image
+                src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1374&q=80"
+                alt="Chefs at work"
+                fill
+                sizes="(max-width: 768px) 100vw, 25vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors"></div>
+            </div>
+
+            <div className="relative rounded-3xl overflow-hidden group">
+              <Image
+                src="https://images.unsplash.com/photo-1559339352-11d035aa65de?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80"
+                alt="Warm Lighting"
+                fill
+                sizes="(max-width: 768px) 100vw, 25vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors"></div>
+            </div>
+
+            {/* Bottom Row - 2 items */}
+            <div className="relative rounded-3xl overflow-hidden group">
+              <Image
+                src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80"
+                alt="Plating detail"
+                fill
+                sizes="(max-width: 768px) 100vw, 25vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors"></div>
+            </div>
+
+            <div className="relative rounded-3xl overflow-hidden group">
+              <Image
+                src="https://images.unsplash.com/photo-1544148103-0773bf10d330?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80"
+                alt="Happy Guests"
+                fill
+                sizes="(max-width: 768px) 100vw, 25vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors"></div>
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <span className="bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full border border-white/30 font-medium text-sm">View Gallery</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* --- Testimonials --- */}
-      <section className="py-20 bg-emerald-900 text-white">
+      <section className="py-20 bg-emerald-900 text-white relative overflow-hidden">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col md:flex-row gap-12 items-center">
             <div className="md:w-1/3">
@@ -413,7 +492,7 @@ export default function Home() {
       </section>
 
       {/* --- Footer --- */}
-      <footer className="bg-slate-950 text-slate-400 py-16">
+      <footer className="bg-slate-950 text-slate-400 py-16 relative overflow-hidden before:hidden after:hidden z-10">
         <div className="container mx-auto px-4 max-w-7xl grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-white">
@@ -431,7 +510,7 @@ export default function Home() {
           </div>
 
           <div>
-            <h4 className="text-white font-bold mb-6">Quick Links</h4>
+            <h4 className="text-emerald-500 font-bold mb-6 text-lg" style={{ color: '#10b981' }}>Quick Links</h4>
             <ul className="space-y-3 text-sm">
               <li><a href="#" className="hover:text-white transition-colors">Home</a></li>
               <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
@@ -441,7 +520,7 @@ export default function Home() {
           </div>
 
           <div>
-            <h4 className="text-white font-bold mb-6">Contact</h4>
+            <h4 className="text-emerald-500 font-bold mb-6 text-lg" style={{ color: '#10b981' }}>Contact</h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-3">
                 <MapPin size={16} className="mt-0.5 text-emerald-500" />
@@ -455,10 +534,10 @@ export default function Home() {
           </div>
 
           <div>
-            <h4 className="text-white font-bold mb-6">Newsletter</h4>
+            <h4 className="text-emerald-500 font-bold mb-6 text-lg" style={{ color: '#10b981' }}>Newsletter</h4>
             <p className="text-sm mb-4">Subscribe to get offers and updates.</p>
             <div className="flex gap-2">
-              <input type="email" placeholder="Your email" className="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm w-full focus:outline-none focus:border-emerald-500" />
+              <input type="email" placeholder="Your email" className="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm w-full focus:outline-none focus:border-emerald-500 text-white" />
               <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700">
                 <ArrowRight size={16} />
               </button>

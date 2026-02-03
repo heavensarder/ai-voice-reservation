@@ -218,7 +218,10 @@ export default function VoiceAgent() {
                                     </>
                                 )}
                             </div>
-                            <div className="absolute -bottom-2 right-6 w-4 h-4 bg-card border-b border-r border-border rotate-45"></div>
+                            <div
+                                className="absolute -bottom-2 right-6 w-4 h-4 bg-card border-b border-r border-border"
+                                style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }}
+                            ></div>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -235,8 +238,11 @@ export default function VoiceAgent() {
                                 className="relative bg-slate-900 text-white px-4 py-2 rounded-xl shadow-xl border border-slate-700 font-semibold text-sm whitespace-nowrap hidden md:block mr-2"
                             >
                                 Call for Reservation
-                                {/* Right Arrow */}
-                                <div className="absolute top-1/2 -right-1.5 w-3 h-3 bg-slate-900 border-t border-r border-slate-700 transform -translate-y-1/2 rotate-45"></div>
+                                {/* Right Arrow using clip-path */}
+                                <div
+                                    className="absolute top-1/2 -right-1.5 w-3 h-3 bg-slate-900"
+                                    style={{ clipPath: 'polygon(0 0, 0% 100%, 100% 50%)' }}
+                                ></div>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -302,7 +308,10 @@ export default function VoiceAgent() {
                     {permissionError && (
                         <div className="absolute bottom-full right-0 mb-3 w-48 bg-destructive text-destructive-foreground text-xs p-2 rounded-lg shadow-lg text-center">
                             {permissionError}
-                            <div className="absolute -bottom-1 right-6 w-3 h-3 bg-destructive rotate-45"></div>
+                            <div
+                                className="absolute bottom-full right-6 w-3 h-3 bg-destructive mb-[-6px]"
+                                style={{ clipPath: 'polygon(50% 100%, 0 0, 100% 0)' }}
+                            ></div>
                         </div>
                     )}
                 </div>
