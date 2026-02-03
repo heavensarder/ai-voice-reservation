@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, CalendarDays, Settings, LogOut, UtensilsCrossed, Users } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, CalendarDays, Settings, LogOut, UtensilsCrossed } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { logoutAdmin } from "@/app/admin/actions";
 
@@ -16,20 +16,20 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-50 w-64 border-r bg-card shadow-sm hidden md:flex flex-col">
-      <div className="h-16 flex items-center px-6 border-b border-border/50">
-        <Link href="/admin" className="flex items-center gap-2 font-bold text-lg tracking-tight text-primary">
-          <div className="bg-primary/10 p-1.5 rounded-md">
-             <UtensilsCrossed className="w-5 h-5" />
+    <aside className="fixed inset-y-0 left-0 z-50 w-72 border-r border-slate-100 bg-white/80 backdrop-blur-xl shadow-sm hidden md:flex flex-col rounded-r-3xl my-4 ml-4 h-[calc(100vh-2rem)]">
+      <div className="h-20 flex items-center px-8 border-b border-slate-100">
+        <Link href="/" className="flex items-center gap-3 font-bold text-xl tracking-tight text-slate-800">
+          <div className="bg-emerald-100 text-emerald-600 p-2 rounded-xl">
+            <UtensilsCrossed className="w-6 h-6" />
           </div>
-          <span>DineAI Admin</span>
+          <span>Bhojone<span className="text-emerald-600">.</span></span>
         </Link>
       </div>
 
-      <div className="flex-1 py-6 px-4 space-y-1">
-        
-        <div className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-wider px-2">Main Menu</div>
-        
+      <div className="flex-1 py-8 px-6 space-y-2">
+
+        <div className="text-xs font-bold text-slate-400 mb-6 uppercase tracking-wider px-2">Main Menu</div>
+
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -37,33 +37,29 @@ export default function AdminSidebar() {
               key={item.href}
               href={item.href}
               className={clsx(
-                "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all",
+                "flex items-center gap-4 px-4 py-3.5 text-sm font-semibold rounded-2xl transition-all duration-300",
                 {
-                  "bg-primary/10 text-primary": isActive,
-                  "text-muted-foreground hover:bg-muted hover:text-foreground": !isActive,
+                  "bg-emerald-50 text-emerald-700 shadow-sm shadow-emerald-100": isActive,
+                  "text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:pl-5": !isActive,
                 }
               )}
             >
-              <item.icon className="w-4 h-4" />
+              <item.icon className={clsx("w-5 h-5", isActive ? "text-emerald-600" : "text-slate-400")} />
               {item.label}
             </Link>
           );
         })}
       </div>
 
-
-
-      <div className="p-4 border-t border-border/50">
-         <form action={async () => {
-             await logoutAdmin();
-             // The action likely handles redirect, or we can force it here just in case if client-side nav is needed
-             // But server action redirect is best.
-         }}>
-            <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors w-full">
-                <LogOut className="w-4 h-4" />
-                Logout
-            </button>
-         </form>
+      <div className="p-6 border-t border-slate-100">
+        <form action={async () => {
+          await logoutAdmin();
+        }}>
+          <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors w-full group">
+            <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            Logout
+          </button>
+        </form>
       </div>
     </aside>
   );

@@ -20,8 +20,8 @@ function Calendar({
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
+        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full",
+        month: "space-y-4 w-full",
         caption: "flex justify-center pt-1 relative items-center mb-2",
         caption_label: "text-sm font-semibold tracking-wide text-foreground/80",
         nav: "space-x-1 flex items-center",
@@ -34,14 +34,14 @@ function Calendar({
         table: "w-full border-collapse space-y-1",
         head_row: "flex mb-2",
         head_cell:
-          "text-muted-foreground rounded-md w-9 font-medium text-[0.8rem] uppercase tracking-wider opacity-70",
+          "text-muted-foreground rounded-md font-medium text-[0.8rem] uppercase tracking-wider opacity-70 w-full",
         row: "flex w-full mt-2",
         cell: cn(
-           "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent/50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
+          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent/50 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md w-full"
         ),
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-full transition-all hover:scale-105"
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-full transition-all hover:scale-105 mx-auto"
         ),
         day_range_start: "day-range-start",
         day_range_end: "day-range-end",

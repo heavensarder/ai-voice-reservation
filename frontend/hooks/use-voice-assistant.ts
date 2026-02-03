@@ -9,29 +9,29 @@ export function useVoiceAssistant() {
     const [reviewData, setReviewData] = useState<any | null>(null);
     const [saveError, setSaveError] = useState<string | null>(null);
     const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
-    
+
     // Use ref alongside state for stable access in callbacks
     const reviewDataRef = useRef<any | null>(null);
 
     const websocketRef = useRef<WebSocket | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
-    
+
     // VAD Refs
     const audioContextRef = useRef<AudioContext | null>(null);
     const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
     const isRecordingRef = useRef<boolean>(false);
-    
+
     // Auto-restart control
     const shouldAutoRestartRef = useRef<boolean>(true);
     const shouldDisconnectAfterPromptRef = useRef<boolean>(false);
-    
+
     // Audio queue system to prevent overlapping audio
     const audioQueueRef = useRef<Blob[]>([]);
     const isPlayingRef = useRef<boolean>(false);
-    
+
     // We need a stable reference to startRecording to call it from audio.onended
-    const startRecordingRef = useRef<() => void>(() => {});
+    const startRecordingRef = useRef<() => void>(() => { });
 
     const stopRecording = useCallback(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
@@ -70,7 +70,7 @@ export function useVoiceAssistant() {
     const processAudioQueue = useCallback(() => {
         if (audioQueueRef.current.length === 0) {
             isPlayingRef.current = false;
-            
+
             // Only handle post-audio actions when queue is empty
             if (shouldDisconnectAfterPromptRef.current) {
                 setAgentState('idle');
@@ -80,7 +80,7 @@ export function useVoiceAssistant() {
                 }, 1000);
                 return;
             }
-            
+
             // AUTO-RESTART: Only if shouldAutoRestartRef is true
             if (shouldAutoRestartRef.current) {
                 setTimeout(() => {
@@ -98,7 +98,7 @@ export function useVoiceAssistant() {
 
         isPlayingRef.current = true;
         setAgentState('speaking');
-        
+
         const audioBlob = audioQueueRef.current.shift()!;
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
@@ -124,7 +124,7 @@ export function useVoiceAssistant() {
     // Add audio to queue and start playing if not already
     const queueAudio = useCallback((audioBlob: Blob) => {
         audioQueueRef.current.push(audioBlob);
-        
+
         // Start processing if not already playing
         if (!isPlayingRef.current) {
             processAudioQueue();
@@ -136,7 +136,7 @@ export function useVoiceAssistant() {
         shouldDisconnectAfterPromptRef.current = false;
         audioQueueRef.current = []; // Clear queue on new connection
         isPlayingRef.current = false;
-        
+
         const ws = new WebSocket('ws://localhost:8000/ws');
 
         ws.onopen = () => {
@@ -161,10 +161,10 @@ export function useVoiceAssistant() {
                 } else if (data.type === 'reservation_confirmed') {
                     shouldDisconnectAfterPromptRef.current = true;
                     shouldAutoRestartRef.current = false; // Stop loop immediately
-                    
+
                     // Prefer server-sent data, fallback to ref (not state due to closure issues)
                     const payload = data.data || reviewDataRef.current;
-                    
+
                     if (payload) {
                         const { saveReservation } = await import('@/app/actions');
                         try {
@@ -217,7 +217,7 @@ export function useVoiceAssistant() {
     const startRecording = useCallback(async () => {
         try {
             shouldAutoRestartRef.current = true; // Enable loop on start
-            
+
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
@@ -227,10 +227,10 @@ export function useVoiceAssistant() {
             // Max Recording Timeout (Safety valve)
             const MAX_DURATION = 15000; // 15 seconds for longer inputs like phone numbers
             const maxTimeout = setTimeout(() => {
-                 if (isRecordingRef.current) {
-                     console.log("Max duration reached, stopping...");
-                     stopRecording();
-                 }
+                if (isRecordingRef.current) {
+                    console.log("Max duration reached, stopping...");
+                    stopRecording();
+                }
             }, MAX_DURATION);
 
             // --- Basic VAD Logic ---
@@ -238,12 +238,12 @@ export function useVoiceAssistant() {
             audioContextRef.current = audioContext;
             const source = audioContext.createMediaStreamSource(stream);
             const processor = audioContext.createScriptProcessor(2048, 1, 1);
-            
+
             source.connect(processor);
             processor.connect(audioContext.destination);
 
             let silenceStart = Date.now();
-            
+
             processor.onaudioprocess = (e) => {
                 if (!isRecordingRef.current) return;
 
@@ -253,7 +253,7 @@ export function useVoiceAssistant() {
                     sum += input[i] * input[i];
                 }
                 const rms = Math.sqrt(sum / input.length);
-                
+
                 // Threshold for silence (lower = more sensitive)
                 const THRESHOLD = 0.008; // Slightly more sensitive
 
@@ -292,7 +292,7 @@ export function useVoiceAssistant() {
                     websocketRef.current.send(audioBlob);
                     setAgentState('thinking');
                 }
-                
+
                 // Cleanup VAD tracks
                 stream.getTracks().forEach(track => track.stop());
                 if (audioContext.state !== 'closed') {
@@ -314,6 +314,11 @@ export function useVoiceAssistant() {
         startRecordingRef.current = startRecording;
     }, [startRecording]);
 
+    const resetReservationStatus = useCallback(() => {
+        setSaveSuccess(false);
+        setSaveError(null);
+    }, []);
+
     return {
         messages,
         status,
@@ -326,6 +331,7 @@ export function useVoiceAssistant() {
         disconnect,
         startRecording,
         stopRecording,
-        manualStop
+        manualStop,
+        resetReservationStatus
     };
 }

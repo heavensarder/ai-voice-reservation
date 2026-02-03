@@ -173,6 +173,8 @@ async def websocket_endpoint(websocket: WebSocket):
                                 logger.error(f"Failed to parse review JSON: {json_str[:20]}...")
                         else:
                              logger.error("No JSON found in REVIEW_DETAILS response")
+                             # Attempt fallback: Look for ANY json in the history if not found here?
+                             # For now, just log. The modal won't show, but text will speak.
 
                     # Check for CONFIRM_RESERVATION (Final)
                     if "[CONFIRM_RESERVATION]" in ai_response_text:

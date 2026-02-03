@@ -32,16 +32,16 @@ export default async function AdminDashboard() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = formatDate(today);
-    
+
     // Get all reservations for statistics
     const allReservations = await getReservations();
     const todayReservations = allReservations.filter(r => r.date === todayStr);
-    
+
     // Get upcoming reservations (next 7 days)
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
     nextWeek.setHours(23, 59, 59, 999);
-    
+
     const upcomingReservations = allReservations.filter(r => {
         const resDate = parseDate(r.date);
         return resDate >= today && resDate <= nextWeek;
@@ -51,67 +51,80 @@ export default async function AdminDashboard() {
     const todayGuests = todayReservations.reduce((sum, r) => sum + (parseInt(r.people) || 0), 0);
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard Overview</h1>
-                <p className="text-muted-foreground">Welcome back to your reservation management system.</p>
+        <div className="space-y-8">
+            <div className="flex flex-col gap-1">
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard Overview</h1>
+                <p className="text-slate-500">Welcome back to your reservation management system.</p>
             </div>
 
             {/* Stats Cards */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <div className="p-6 rounded-xl border border-border bg-card text-card-foreground shadow-sm space-y-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <CalendarDays className="w-4 h-4" />
-                        <h3 className="text-sm font-medium">Total Reservations</h3>
+                <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group">
+                    <div className="flex items-center gap-3 text-slate-500 mb-4 group-hover:text-emerald-600 transition-colors">
+                        <div className="p-2 bg-slate-50 rounded-xl group-hover:bg-emerald-50 transition-colors">
+                            <CalendarDays className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-sm font-semibold uppercase tracking-wider">Total Reservations</h3>
                     </div>
-                    <div className="text-3xl font-bold">{allReservations.length}</div>
-                    <p className="text-xs text-muted-foreground">All time</p>
+                    <div className="text-4xl font-bold text-slate-800">{allReservations.length}</div>
+                    <p className="text-xs text-slate-400 mt-2 font-medium">All time bookings</p>
                 </div>
-                <div className="p-6 rounded-xl border border-border bg-card text-card-foreground shadow-sm space-y-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="w-4 h-4" />
-                        <h3 className="text-sm font-medium">Today's Bookings</h3>
+                <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group">
+                    <div className="flex items-center gap-3 text-slate-500 mb-4 group-hover:text-emerald-600 transition-colors">
+                        <div className="p-2 bg-slate-50 rounded-xl group-hover:bg-emerald-50 transition-colors">
+                            <Clock className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-sm font-semibold uppercase tracking-wider">Today's Bookings</h3>
                     </div>
-                    <div className="text-3xl font-bold text-primary">{todayReservations.length}</div>
-                    <p className="text-xs text-muted-foreground">{todayStr}</p>
+                    <div className="text-4xl font-bold text-emerald-600">{todayReservations.length}</div>
+                    <p className="text-xs text-slate-400 mt-2 font-medium">{todayStr}</p>
                 </div>
-                <div className="p-6 rounded-xl border border-border bg-card text-card-foreground shadow-sm space-y-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <Users className="w-4 h-4" />
-                        <h3 className="text-sm font-medium">Today's Guests</h3>
+                <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group">
+                    <div className="flex items-center gap-3 text-slate-500 mb-4 group-hover:text-emerald-600 transition-colors">
+                        <div className="p-2 bg-slate-50 rounded-xl group-hover:bg-emerald-50 transition-colors">
+                            <Users className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-sm font-semibold uppercase tracking-wider">Today's Guests</h3>
                     </div>
-                    <div className="text-3xl font-bold">{todayGuests}</div>
-                    <p className="text-xs text-muted-foreground">Expected visitors</p>
+                    <div className="text-4xl font-bold text-slate-800">{todayGuests}</div>
+                    <p className="text-xs text-slate-400 mt-2 font-medium">Expected visitors</p>
                 </div>
-                <div className="p-6 rounded-xl border border-border bg-card text-card-foreground shadow-sm space-y-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <CalendarDays className="w-4 h-4" />
-                        <h3 className="text-sm font-medium">This Week</h3>
+                <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 group">
+                    <div className="flex items-center gap-3 text-slate-500 mb-4 group-hover:text-emerald-600 transition-colors">
+                        <div className="p-2 bg-slate-50 rounded-xl group-hover:bg-emerald-50 transition-colors">
+                            <CalendarDays className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-sm font-semibold uppercase tracking-wider">This Week</h3>
                     </div>
-                    <div className="text-3xl font-bold">{upcomingReservations.length}</div>
-                    <p className="text-xs text-muted-foreground">Upcoming bookings</p>
+                    <div className="text-4xl font-bold text-slate-800">{upcomingReservations.length}</div>
+                    <p className="text-xs text-slate-400 mt-2 font-medium">Upcoming bookings</p>
                 </div>
             </div>
 
-            {/* Today's Reservations */}
-            <div className="rounded-xl border border-border bg-card shadow-sm">
-                <div className="p-4 border-b border-border">
-                    <h2 className="text-lg font-semibold">Today's Reservations</h2>
-                </div>
-                <div className="p-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Today's Reservations */}
+                <div className="lg:col-span-1 bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-xl font-bold text-slate-800">Today's Schedule</h2>
+                        <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full">{todayReservations.length} Bookings</span>
+                    </div>
+
                     {todayReservations.length === 0 ? (
-                        <p className="text-muted-foreground text-sm text-center py-8">No reservations for today.</p>
+                        <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                            <Clock className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                            <p className="text-slate-500 font-medium">No reservations for today.</p>
+                        </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {todayReservations.map((res, idx) => (
-                                <div key={res.id || idx} className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border">
+                                <div key={res.id || idx} className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all duration-300">
                                     <div className="flex items-center gap-4">
-                                        <div className="bg-primary/10 text-primary px-3 py-2 rounded-lg text-center min-w-[70px]">
+                                        <div className="bg-white text-emerald-600 shadow-sm px-4 py-3 rounded-xl text-center min-w-[80px] border border-slate-100 group-hover:border-emerald-200 transition-colors">
                                             <div className="text-sm font-bold">{res.time}</div>
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-foreground">{res.name}</h4>
-                                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                            <h4 className="font-bold text-slate-800 text-lg">{res.name}</h4>
+                                            <div className="flex items-center gap-3 text-xs font-medium text-slate-500 mt-1">
                                                 <span className="flex items-center gap-1">
                                                     <Phone className="w-3 h-3" />
                                                     {res.phone}
@@ -128,36 +141,56 @@ export default async function AdminDashboard() {
                         </div>
                     )}
                 </div>
-            </div>
 
-            {/* Upcoming Reservations */}
-            <div className="rounded-xl border border-border bg-card shadow-sm">
-                <div className="p-4 border-b border-border">
-                    <h2 className="text-lg font-semibold">Upcoming Reservations (Next 7 Days)</h2>
-                </div>
-                <div className="p-4">
+                {/* Upcoming Reservations Table */}
+                <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-xl font-bold text-slate-800">Upcoming Reservations</h2>
+                        <button className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline">View All</button>
+                    </div>
+
                     {upcomingReservations.length === 0 ? (
-                        <p className="text-muted-foreground text-sm text-center py-8">No upcoming reservations.</p>
+                        <div className="text-center py-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                            <CalendarDays className="w-10 h-10 text-slate-300 mx-auto mb-4" />
+                            <p className="text-slate-500 font-medium text-lg">No upcoming reservations found.</p>
+                        </div>
                     ) : (
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
+                            <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="border-b border-border">
-                                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Date</th>
-                                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Time</th>
-                                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Name</th>
-                                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Phone</th>
-                                        <th className="text-left py-3 px-4 font-medium text-muted-foreground">Guests</th>
+                                    <tr className="border-b border-slate-100">
+                                        <th className="py-4 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Date</th>
+                                        <th className="py-4 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Time</th>
+                                        <th className="py-4 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Guest info</th>
+                                        <th className="py-4 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                                        <th className="py-4 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">People</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="text-sm">
                                     {upcomingReservations.slice(0, 10).map((res, idx) => (
-                                        <tr key={res.id || idx} className="border-b border-border/50 hover:bg-muted/30">
-                                            <td className="py-3 px-4">{formatDisplayDate(res.date)}</td>
-                                            <td className="py-3 px-4">{res.time}</td>
-                                            <td className="py-3 px-4 font-medium">{res.name}</td>
-                                            <td className="py-3 px-4 font-mono text-xs">{res.phone}</td>
-                                            <td className="py-3 px-4">{res.people}</td>
+                                        <tr key={res.id || idx} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors group">
+                                            <td className="py-4 px-4 font-medium text-slate-600">{formatDisplayDate(res.date)}</td>
+                                            <td className="py-4 px-4">
+                                                <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-bold group-hover:bg-white group-hover:shadow-sm transition-all">
+                                                    {res.time}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="font-bold text-slate-800">{res.name}</div>
+                                                <div className="text-slate-400 text-xs font-mono mt-0.5">{res.phone}</div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                    Confirmed
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4 text-right">
+                                                <div className="flex items-center justify-end gap-1 font-bold text-slate-700">
+                                                    <Users className="w-4 h-4 text-slate-400" />
+                                                    {res.people}
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

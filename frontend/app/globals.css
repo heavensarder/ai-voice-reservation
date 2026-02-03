@@ -30,7 +30,8 @@
 :root {
   /* Light Mode (Default) - Slate/Indigo Theme */
   --background: #ffffff;
-  --foreground: #0f172a; /* Slate 900 */
+  --foreground: #0f172a;
+  /* Slate 900 */
 
   --card: #ffffff;
   --card-foreground: #0f172a;
@@ -38,29 +39,33 @@
   --popover: #ffffff;
   --popover-foreground: #0f172a;
 
-  --primary: #4f46e5; /* Indigo 600 */
+  --primary: #059669;
+  /* Emerald 600 */
   --primary-foreground: #ffffff;
 
   --secondary: #f1f5f9;
   --secondary-foreground: #0f172a;
 
-  --muted: #f1f5f9; /* Slate 100 */
-  --muted-foreground: #64748b; /* Slate 500 */
+  --muted: #f1f5f9;
+  /* Slate 100 */
+  --muted-foreground: #64748b;
+  /* Slate 500 */
 
-  --accent: #e0e7ff; /* Indigo 100 */
-  --accent-foreground: #3730a3; /* Indigo 800 */
+  --accent: #ecfdf5;
+  /* Emerald 50 */
+  --accent-foreground: #065f46;
+  /* Emerald 800 */
 
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
-  --border: #e2e8f0; /* Slate 200 */
+  --border: #e2e8f0;
+  /* Slate 200 */
   --input: #e2e8f0;
-  --ring: #4f46e5;
+  --ring: #059669;
+  /* Emerald 600 */
 
   --radius: 0.5rem;
-
-  --font-inter: "Inter", sans-serif;
-  --font-anek-bangla: "Anek Bangla", sans-serif;
 }
 
 body {
@@ -72,17 +77,3 @@ body {
 }
 
 /* Typography Utilities */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  color: #0f172a; /* Slate 900 */
-}
-
-p {
-  line-height: 1.6;
-}
