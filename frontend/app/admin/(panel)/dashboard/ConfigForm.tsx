@@ -64,8 +64,8 @@ export default function ConfigForm({ initialConfig }: { initialConfig: Record<st
 
                     <div className="space-y-3">
                         <label className="block text-sm font-medium text-foreground/80">
-                            Google TTS Credentials
-                            <span className="ml-2 text-xs text-muted-foreground font-normal">(JSON Content)</span>
+                            Google Cloud Credentials
+                            <span className="ml-2 text-xs text-muted-foreground font-normal">(TTS + Bengali Speech Recognition)</span>
                         </label>
                         <textarea
                             name="GOOGLE_TTS_CREDENTIALS"
@@ -74,7 +74,7 @@ export default function ConfigForm({ initialConfig }: { initialConfig: Record<st
                             placeholder='{"type": "service_account", ...}'
                             className="w-full px-4 py-3 bg-muted/50 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring outline-none font-mono text-sm transition-all resize-y"
                         />
-                        <p className="text-xs text-muted-foreground">Paste the entire contents of your service-account.json here.</p>
+                        <p className="text-xs text-muted-foreground">Paste the entire contents of your service-account.json here. Used for both Text-to-Speech and Bengali Speech Recognition.</p>
                     </div>
 
 
@@ -135,7 +135,12 @@ export default function ConfigForm({ initialConfig }: { initialConfig: Record<st
                         </h3>
                         <ol className="list-decimal pl-5 space-y-2 text-muted-foreground marker:text-muted-foreground/50">
                             <li>Go to <a href="https://console.cloud.google.com/" target="_blank" className="text-primary hover:underline">Google Cloud Console</a>.</li>
-                            <li>Create a project & Enable <strong>"Cloud Text-to-Speech API"</strong>.</li>
+                            <li>Create a project & Enable these APIs:
+                                <ul className="list-disc pl-4 mt-1 space-y-1">
+                                    <li><strong>"Cloud Text-to-Speech API"</strong></li>
+                                    <li><strong>"Cloud Speech-to-Text API"</strong> (for Bengali recognition)</li>
+                                </ul>
+                            </li>
                             <li>Go to <strong>IAM & Admin &gt; Service Accounts</strong>.</li>
                             <li>Create Key &gt; JSON. Download the file.</li>
                             <li>Open the file, copy the <strong>entire content</strong>, and paste above.</li>

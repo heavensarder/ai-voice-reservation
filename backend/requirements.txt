@@ -4,9 +4,9 @@ websockets
 python-multipart
 openai
 google-cloud-texttospeech
+google-cloud-speech
 python-dotenv
 httpx
 sqlalchemy
 pymysql
 cryptography
-
