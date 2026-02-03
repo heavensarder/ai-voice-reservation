@@ -36,17 +36,18 @@ async def synthesize_speech(text: str) -> bytes:
     try:
         synthesis_input = texttospeech.SynthesisInput(text=text)
 
-        # Build the voice request, select the language code ("bn-BD") and the ssml
-        # voice gender ("NEUTRAL")
+        # WaveNet voice for more natural, professional speech
         voice = texttospeech.VoiceSelectionParams(
             language_code="bn-IN",
-            name="bn-IN-Standard-A", # Wavenet is higher quality
+            name="bn-IN-Wavenet-A",  # WaveNet - more natural than Standard
             ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
         )
 
-        # Select the type of audio file you want returned
+        # Audio config with natural speaking rate
         audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3
+            audio_encoding=texttospeech.AudioEncoding.MP3,
+            speaking_rate=1.0,  # Normal speed (0.25 to 4.0)
+            pitch=0.0,  # Normal pitch (-20 to 20)
         )
 
         response = client.synthesize_speech(
