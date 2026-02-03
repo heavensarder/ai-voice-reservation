@@ -4,6 +4,25 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Normalize date to DD-MM-YYYY format (handles both YYYY-MM-DD and DD-MM-YYYY input)
+function normalizeDateFormat(dateStr: string): string {
+    if (!dateStr) return dateStr;
+    
+    // Check if it's already DD-MM-YYYY format
+    if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+        return dateStr;
+    }
+    
+    // Convert YYYY-MM-DD to DD-MM-YYYY
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [year, month, day] = dateStr.split('-');
+        return `${day}-${month}-${year}`;
+    }
+    
+    // Return as-is if unknown format
+    return dateStr;
+}
+
 export async function saveReservation(data: {
     name: string;
     phone: string;
@@ -11,27 +30,19 @@ export async function saveReservation(data: {
     time: string;
     people: string;
 }) {
-    console.log("Saving reservation:", data);
+    // Normalize date format to DD-MM-YYYY
+    const normalizedDate = normalizeDateFormat(data.date);
+    console.log("Saving reservation:", { ...data, date: normalizedDate });
+    
     try {
-        // 1. Check for duplicates
-        const existing = await prisma.reservation.findFirst({
-            where: {
-                date: data.date,
-                time: data.time
-            }
-        });
-
-        if (existing) {
-            return { success: false, error: 'Duplicate: Time slot already booked' };
-        }
-
+        // Create reservation directly (no duplicate checking)
         const reservation = await prisma.reservation.create({
             data: {
                 name: data.name,
                 phone: data.phone,
-                date: data.date,
+                date: normalizedDate,
                 time: data.time,
-                people: String(data.people), // Ensure string
+                people: String(data.people),
             },
         });
         return { success: true, id: reservation.id };
@@ -42,7 +53,9 @@ export async function saveReservation(data: {
 }
 
 export async function getReservations(dateStr?: string) {
-    const whereClause = dateStr ? { date: dateStr } : {};
+    // Normalize the date format before querying
+    const normalizedDate = dateStr ? normalizeDateFormat(dateStr) : undefined;
+    const whereClause = normalizedDate ? { date: normalizedDate } : {};
     
     return await prisma.reservation.findMany({
         where: whereClause,

@@ -11,18 +11,20 @@ def get_client():
 async def transcribe_audio(audio_bytes: bytes) -> str:
     """
     Transcribes audio bytes using OpenAI Whisper API.
+    Uses prompt-based guidance for Bengali/Bangla recognition.
     """
     try:
         # OpenAI API requires a file-like object with a filename
-        # We wrap bytes in a BytesIO
         audio_file = io.BytesIO(audio_bytes)
-        audio_file.name = "audio.wav"  # Important for OpenAI to know format
+        audio_file.name = "audio.webm"  # Match frontend format
         
         client = get_client()
         transcript = await client.audio.transcriptions.create(
             model="whisper-1", 
             file=audio_file,
-            prompt="Bengali, English conversation."
+            # Note: Bengali (bn) is not supported as explicit language
+            # Using Bengali prompt to guide the model
+            prompt="বাংলা রেস্তোরাঁ রিজার্ভেশন। নাম, ফোন, তারিখ, সময়, অতিথি সংখ্যা। আমি টেবিল বুক করতে চাই। হ্যাঁ, না, ধন্যবাদ।"
         )
         
         return transcript.text

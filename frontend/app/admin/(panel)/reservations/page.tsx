@@ -2,19 +2,37 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, Users, Clock, Phone } from 'lucide-react';
+import { Calendar as CalendarIcon, Users, Clock, Phone, Trash2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getReservations, getAllBookedDates } from '@/app/actions';
+import { Button } from '@/components/ui/button';
+import { getReservations, getAllBookedDates, deleteReservation } from '@/app/actions';
 import { clsx } from 'clsx';
 import { motion } from 'framer-motion';
+
+// Helper to parse time for sorting (converts "HH:MM AM/PM" to minutes from midnight)
+function parseTimeToMinutes(timeStr: string): number {
+    if (!timeStr) return 0;
+    try {
+        const parts = timeStr.trim().split(' ');
+        const [hours, minutes] = parts[0].split(':').map(Number);
+        const isPM = parts[1]?.toUpperCase() === 'PM';
+        let totalHours = hours;
+        if (isPM && hours !== 12) totalHours += 12;
+        if (!isPM && hours === 12) totalHours = 0;
+        return totalHours * 60 + (minutes || 0);
+    } catch {
+        return 0;
+    }
+}
 
 export default function ReservationsPage() {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [reservations, setReservations] = useState<any[]>([]);
     const [bookedDates, setBookedDates] = useState<Date[]>([]);
     const [loading, setLoading] = useState(false);
+    const [deleting, setDeleting] = useState<number | null>(null);
 
     // Fetch all booked dates for the calendar markers
     useEffect(() => {
@@ -22,7 +40,6 @@ export default function ReservationsPage() {
             try {
                 const datesStr = await getAllBookedDates();
                 const dates = datesStr.map(d => {
-                    // Parse DD-MM-YYYY manually or use simple split to avoid timezone issues
                     const parts = d.split('-');
                     if (parts.length === 3) {
                         return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
@@ -35,28 +52,49 @@ export default function ReservationsPage() {
             }
         }
         fetchBookedDates();
-    }, []);
+    }, [reservations]); // Refresh when reservations change
 
     // Fetch reservations for the selected date
-    useEffect(() => {
-        async function fetchReservations() {
-            if (!date) return;
-            setLoading(true);
-            try {
-                // We'll normalize date to DD-MM-YYYY to match backend storage
-                const dateStr = format(date, 'dd-MM-yyyy');
-                const data = await getReservations(dateStr);
-                setReservations(data);
-            } catch (error) {
-                console.error("Failed to fetch reservations", error);
-                setReservations([]);
-            } finally {
-                setLoading(false);
-            }
+    const fetchReservations = async () => {
+        if (!date) return;
+        setLoading(true);
+        try {
+            const dateStr = format(date, 'dd-MM-yyyy');
+            const data = await getReservations(dateStr);
+            // Sort by time
+            const sorted = [...data].sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+            setReservations(sorted);
+        } catch (error) {
+            console.error("Failed to fetch reservations", error);
+            setReservations([]);
+        } finally {
+            setLoading(false);
         }
+    };
 
+    useEffect(() => {
         fetchReservations();
     }, [date]);
+
+    // Delete handler
+    const handleDelete = async (id: number) => {
+        if (!confirm('Are you sure you want to delete this reservation?')) return;
+        
+        setDeleting(id);
+        try {
+            const result = await deleteReservation(id);
+            if (result.success) {
+                // Refresh the list
+                fetchReservations();
+            } else {
+                alert('Failed to delete reservation');
+            }
+        } catch (e) {
+            alert('Error deleting reservation');
+        } finally {
+            setDeleting(null);
+        }
+    };
 
     return (
         <div className="p-6 space-y-8 max-w-7xl mx-auto">
@@ -108,7 +146,7 @@ export default function ReservationsPage() {
                            </Badge>
                         </CardTitle>
                         <CardDescription>
-                            Review guest details and timings.
+                            Reservations sorted by time. Click trash to delete.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -155,9 +193,20 @@ export default function ReservationsPage() {
                                                             <span className="font-mono">{res.phone}</span>
                                                         </div>
                                                     </div>
-                                                    <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200">
-                                                        #{res.id}
-                                                    </Badge>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200">
+                                                            #{res.id}
+                                                        </Badge>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                            onClick={() => handleDelete(res.id)}
+                                                            disabled={deleting === res.id}
+                                                        >
+                                                            <Trash2 className={clsx("w-4 h-4", deleting === res.id && "animate-pulse")} />
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                                 
                                                 <div className="flex items-center justify-between text-sm mt-1">

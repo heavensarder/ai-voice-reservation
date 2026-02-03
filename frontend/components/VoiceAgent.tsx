@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { Mic, MicOff, Square, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Square, Volume2, Calendar as CalendarIcon, Users, Phone, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { useVoiceAssistant } from '@/hooks/use-voice-assistant';
@@ -17,7 +17,9 @@ export default function VoiceAgent() {
         startRecording,
         stopRecording,
         manualStop,
-        reviewData
+        reviewData,
+        saveError,
+        saveSuccess
     } = useVoiceAssistant();
 
     const bottomRef = useRef<HTMLDivElement>(null);
@@ -42,7 +44,7 @@ export default function VoiceAgent() {
     };
 
     return (
-        <div className="flex flex-col h-[350px] w-full max-w-lg bg-card rounded-3xl overflow-hidden shadow-2xl border border-border/50 ring-1 ring-black/5 dark:ring-white/10">
+        <div className="flex flex-col min-h-[350px] w-full max-w-lg bg-card rounded-3xl overflow-hidden shadow-2xl border border-border/50 ring-1 ring-black/5 dark:ring-white/10">
 
             {/* Header */}
             <div className="bg-muted/50 p-4 border-b border-border flex justify-between items-center backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
@@ -66,38 +68,134 @@ export default function VoiceAgent() {
             <AnimatePresence>
                 {reviewData && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="p-6 bg-amber-50 dark:bg-amber-950/30 mx-4 mt-6 rounded-2xl border border-amber-200 dark:border-amber-800 shadow-sm"
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                        transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                        className="mx-4 mt-4 rounded-2xl overflow-hidden shadow-xl border border-white/20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
                     >
-                        <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200 uppercase tracking-wider mb-3">
-                            Reservation Details
-                        </h3>
-                        <div className="space-y-2 text-sm text-foreground/80">
-                            <div className="flex justify-between border-b border-amber-200/50 pb-1">
-                                <span className="opacity-70">Name:</span>
-                                <span className="font-medium">{reviewData.name}</span>
-                            </div>
-                            <div className="flex justify-between border-b border-amber-200/50 pb-1">
-                                <span className="opacity-70">Phone:</span>
-                                <span className="font-medium font-mono">{reviewData.phone}</span>
-                            </div>
-                            <div className="flex justify-between border-b border-amber-200/50 pb-1">
-                                <span className="opacity-70">Date:</span>
-                                <span className="font-medium">{reviewData.date}</span>
-                            </div>
-                             <div className="flex justify-between border-b border-amber-200/50 pb-1">
-                                <span className="opacity-70">Time:</span>
-                                <span className="font-medium">{reviewData.time}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="opacity-70">People:</span>
-                                <span className="font-medium">{reviewData.people}</span>
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-emerald-600 to-teal-500 px-5 py-3">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                                    <CalendarIcon className="w-4 h-4 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-white font-bold text-sm tracking-wide">
+                                        Reservation Details
+                                    </h3>
+                                    <p className="text-white/70 text-[10px]">Please confirm your booking</p>
+                                </div>
                             </div>
                         </div>
-                         <div className="mt-4 text-xs text-center text-amber-600 dark:text-amber-400 animate-pulse font-medium">
-                            Please say <span className="font-bold">"Yes"</span> to confirm, or mention any change.
+                        
+                        {/* Content */}
+                        <div className="p-5 space-y-3">
+                            <div className="flex items-center justify-between py-2 border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                        <Users className="w-3.5 h-3.5 text-blue-400" />
+                                    </div>
+                                    <span className="text-slate-400 text-xs uppercase tracking-wider">Guest Name</span>
+                                </div>
+                                <span className="text-white font-semibold text-sm">{reviewData.name}</span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between py-2 border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                        <Phone className="w-3.5 h-3.5 text-purple-400" />
+                                    </div>
+                                    <span className="text-slate-400 text-xs uppercase tracking-wider">Phone</span>
+                                </div>
+                                <span className="text-white font-semibold text-sm font-mono">{reviewData.phone}</span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between py-2 border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                                        <CalendarIcon className="w-3.5 h-3.5 text-orange-400" />
+                                    </div>
+                                    <span className="text-slate-400 text-xs uppercase tracking-wider">Date</span>
+                                </div>
+                                <span className="text-white font-semibold text-sm">{reviewData.date}</span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between py-2 border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                                        <Clock className="w-3.5 h-3.5 text-pink-400" />
+                                    </div>
+                                    <span className="text-slate-400 text-xs uppercase tracking-wider">Time</span>
+                                </div>
+                                <span className="text-white font-semibold text-sm">{reviewData.time}</span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between py-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                                        <Users className="w-3.5 h-3.5 text-cyan-400" />
+                                    </div>
+                                    <span className="text-slate-400 text-xs uppercase tracking-wider">Guests</span>
+                                </div>
+                                <span className="text-white font-semibold text-sm">{reviewData.people} People</span>
+                            </div>
+                        </div>
+                        
+                        {/* Footer */}
+                        <div className="bg-gradient-to-r from-emerald-600/20 to-teal-500/20 px-5 py-3 border-t border-white/10">
+                            <p className="text-center text-emerald-400 text-xs font-medium animate-pulse">
+                                🎤 Say <span className="font-bold text-white">"হ্যাঁ"</span> or <span className="font-bold text-white">"Yes"</span> to confirm
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Error Display */}
+            <AnimatePresence>
+                {saveError && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                        className="mx-4 mt-4 rounded-2xl overflow-hidden shadow-xl border border-red-500/30 bg-gradient-to-br from-red-950 via-red-900 to-red-950"
+                    >
+                        <div className="px-5 py-4 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
+                                <span className="text-2xl">❌</span>
+                            </div>
+                            <div>
+                                <h4 className="text-red-300 font-bold text-sm">Reservation Failed</h4>
+                                <p className="text-red-200/80 text-xs mt-0.5">{saveError}</p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Success Display */}
+            <AnimatePresence>
+                {saveSuccess && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                        className="mx-4 mt-4 rounded-2xl overflow-hidden shadow-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-950"
+                    >
+                        <div className="px-5 py-4 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 animate-pulse">
+                                <span className="text-2xl">✅</span>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold text-sm">Reservation Confirmed!</h4>
+                                <p className="text-emerald-200/80 text-xs mt-0.5">Your table has been successfully booked.</p>
+                            </div>
+                        </div>
+                        <div className="bg-emerald-500/10 px-5 py-2 border-t border-emerald-500/20">
+                            <p className="text-emerald-400/80 text-[10px] text-center">Thank you for choosing our restaurant 🙏</p>
                         </div>
                     </motion.div>
                 )}

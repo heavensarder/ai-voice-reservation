@@ -51,6 +51,7 @@ async def websocket_endpoint(websocket: WebSocket):
     logger.info("WebSocket connected")
     
     conversation_history = []
+    last_review_data = None  # Store review data for confirmation
     
     # Send initial greeting
     greeting_text = "নমস্কার! আমি আপনার রিজার্ভেশন অ্যাসিস্ট্যান্ট। আমি আপনাকে কীভাবে সাহায্য করতে পারি?"
@@ -68,36 +69,14 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            # Receive audio chunk or message
-            # For simplicity, we assume client sends JSON with event type or raw bytes?
-            # A common pattern: Client sends raw audio bytes for stream, or JSON for control.
-            # To listen continuously, we might receive bytes.
-            
-            # Let's assume the client sends JSON envelopes for messages and Binary for audio?
-            # Or simpler: Client records chunks -> sends -> server processes.
-            # Real-time WebSocket audio streaming usually requires a VAD on CLIENT or SERVER.
-            # We'll assume CLIENT sends a final blob of audio when silence is detected (turn-based) 
-            # OR streams chunks and we use server-side VAD.
-            # Requirement: "Capture microphone audio in small chunks... Receive Transcribed... etc."
-            
-            # Implementation Strategy: 
-            # 1. Receive message.
-            # 2. If valid audio -> Transcribe.
-            # 3. If transcript -> LLM.
-            # 4. LLM -> TTS -> Send Audio.
-            
             message = await websocket.receive()
             
             if "bytes" in message:
                 audio_data = message["bytes"]
                 logger.info(f"Received audio chunk: {len(audio_data)} bytes")
                 
-                # Transcribe (Simulated or Real)
-                # In a real stream, we'd buffer until silence. 
-                # For this task, we'll assume the client sends a "finished" utterance or we process chunks.
-                # Let's assume the frontend performs VAD and sends a complete sentence audio blob.
-                
                 transcript = await transcribe_audio(audio_data)
+                logger.info(f"Transcription result: '{transcript}'")
                 
                 if transcript:
                     logger.info(f"User: {transcript}")
@@ -109,23 +88,29 @@ async def websocket_endpoint(websocket: WebSocket):
                         "content": transcript
                     })
                     
-                    # Get AI Response (Unpacking 3 values now)
+                    # Get AI Response
+                    logger.info("Calling LLM...")
                     intermediate_text, ai_response_text, updated_history = await get_ai_response(transcript, conversation_history)
+                    logger.info(f"LLM response received: {ai_response_text[:100]}...")
                     conversation_history = updated_history
                     
                     # 1. Handle Intermediate "Checking" Message (if any)
+                    # Skip TTS if the final response has special tags (to prevent double-speak)
+                    has_special_tags = "[REVIEW_DETAILS]" in ai_response_text or "[CONFIRM_RESERVATION]" in ai_response_text
+                    
                     if intermediate_text:
                         logger.info(f"Intermediate AI: {intermediate_text}")
-                        # Send text
+                        # Send text (always)
                         await websocket.send_json({
                             "type": "text",
                             "role": "ai",
                             "content": intermediate_text
                         })
-                        # TTS for intermediate part
-                        audio_partial = await synthesize_speech(intermediate_text)
-                        if audio_partial:
-                            await websocket.send_bytes(audio_partial)
+                        # TTS for intermediate part ONLY if no special tags follow
+                        if not has_special_tags:
+                            audio_partial = await synthesize_speech(intermediate_text)
+                            if audio_partial:
+                                await websocket.send_bytes(audio_partial)
 
                     # 2. Handle Final Response
                     logger.info(f"AI: {ai_response_text}")
@@ -173,6 +158,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         if json_str:
                             try:
                                 review_data = json.loads(json_str)
+                                last_review_data = review_data  # Store for confirmation
                                 await websocket.send_json({
                                     "type": "review_details",
                                     "data": review_data
@@ -187,29 +173,54 @@ async def websocket_endpoint(websocket: WebSocket):
                     if "[CONFIRM_RESERVATION]" in ai_response_text:
                         handled = True
                         parts = ai_response_text.split("[CONFIRM_RESERVATION]")
-                        spoken_text = parts[0].strip()
+                        # Get text AFTER the tag (AI puts thank you message after)
+                        spoken_text = parts[1].strip() if len(parts) > 1 else ""
                         
                         # Default confirmation message if AI is silent
                         if not spoken_text:
-                            spoken_text = "রিজার্ভেশন কনফার্ম করা হয়েছে। ধন্যবাদ।"
+                            spoken_text = "রিজার্ভেশন কনফার্ম করা হয়েছে। ধন্যবাদ।"
 
-                        # Send the spoken text if any (e.g. "Okay, confirmed.")
-                        if spoken_text:
-                            await websocket.send_json({
-                                "type": "text",
-                                "role": "ai",
-                                "content": spoken_text
-                            })
-                            audio_response = await synthesize_speech(spoken_text)
-                            if audio_response:
-                                await websocket.send_bytes(audio_response)
+                        # FALLBACK: If we don't have review data, try to extract from current response
+                        if last_review_data is None:
+                            logger.warning("last_review_data is None, attempting extraction from history...")
+                            # Check if there was a recent REVIEW_DETAILS in history
+                            for msg in reversed(conversation_history):
+                                if isinstance(msg, dict) and msg.get('role') == 'assistant':
+                                    content = msg.get('content', '')
+                                    if '[REVIEW_DETAILS]' in content and '{' in content:
+                                        try:
+                                            start = content.find('{')
+                                            end = content.rfind('}')
+                                            if start != -1 and end > start:
+                                                last_review_data = json.loads(content[start:end+1])
+                                                logger.info(f"Recovered review data from history: {last_review_data}")
+                                                break
+                                        except:
+                                            pass
+
+                        # Send text message
+                        await websocket.send_json({
+                            "type": "text",
+                            "role": "ai",
+                            "content": spoken_text
+                        })
                         
-                        # Send trigger event (data is null, frontend must use stored reviewData)
+                        # Send confirmation trigger WITH the stored review data
                         await websocket.send_json({
                             "type": "reservation_confirmed",
-                            "data": None 
+                            "data": last_review_data
                         })
-                        logger.info("Sent confirmation trigger")
+                        logger.info(f"Sent confirmation trigger with data: {last_review_data}")
+                        
+                        # Send end session signal to stop the loop
+                        await websocket.send_json({
+                            "type": "end_session"
+                        })
+                        
+                        # TTS for confirmation (plays last)
+                        audio_response = await synthesize_speech(spoken_text)
+                        if audio_response:
+                            await websocket.send_bytes(audio_response)
                             
                     # Normal response (Only if not handled by special tags)
                     if not handled:
@@ -228,4 +239,7 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.info("Client disconnected")
     except Exception as e:
         logger.error(f"Error: {e}")
-        await websocket.close()
+        try:
+            await websocket.close()
+        except:
+            pass  # Already closed

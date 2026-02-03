@@ -7,6 +7,11 @@ export function useVoiceAssistant() {
     const [agentState, setAgentState] = useState<AgentState>('idle');
     const [permissionError, setPermissionError] = useState<string | null>(null);
     const [reviewData, setReviewData] = useState<any | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+    
+    // Use ref alongside state for stable access in callbacks
+    const reviewDataRef = useRef<any | null>(null);
 
     const websocketRef = useRef<WebSocket | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -20,6 +25,10 @@ export function useVoiceAssistant() {
     // Auto-restart control
     const shouldAutoRestartRef = useRef<boolean>(true);
     const shouldDisconnectAfterPromptRef = useRef<boolean>(false);
+    
+    // Audio queue system to prevent overlapping audio
+    const audioQueueRef = useRef<Blob[]>([]);
+    const isPlayingRef = useRef<boolean>(false);
     
     // We need a stable reference to startRecording to call it from audio.onended
     const startRecordingRef = useRef<() => void>(() => {});
@@ -46,6 +55,9 @@ export function useVoiceAssistant() {
             websocketRef.current = null;
         }
         stopRecording();
+        // Clear audio queue on disconnect
+        audioQueueRef.current = [];
+        isPlayingRef.current = false;
         setStatus('disconnected');
     }, [stopRecording]);
 
@@ -54,46 +66,77 @@ export function useVoiceAssistant() {
         stopRecording();
     }, [stopRecording]);
 
-    // Function to play audio blob
-    const playAudioCallback = useCallback((audioBlob: Blob) => {
+    // Process next audio in queue
+    const processAudioQueue = useCallback(() => {
+        if (audioQueueRef.current.length === 0) {
+            isPlayingRef.current = false;
+            
+            // Only handle post-audio actions when queue is empty
+            if (shouldDisconnectAfterPromptRef.current) {
+                setAgentState('idle');
+                shouldDisconnectAfterPromptRef.current = false;
+                setTimeout(() => {
+                    disconnect();
+                }, 1000);
+                return;
+            }
+            
+            // AUTO-RESTART: Only if shouldAutoRestartRef is true
+            if (shouldAutoRestartRef.current) {
+                setTimeout(() => {
+                    if (websocketRef.current?.readyState === WebSocket.OPEN) {
+                        startRecordingRef.current();
+                    } else {
+                        setAgentState('idle');
+                    }
+                }, 500);
+            } else {
+                setAgentState('idle');
+            }
+            return;
+        }
+
+        isPlayingRef.current = true;
         setAgentState('speaking');
+        
+        const audioBlob = audioQueueRef.current.shift()!;
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
 
         audio.onended = () => {
-             // AUTO-CLOSE: If reservation was confirmed, disconnect
-             if (shouldDisconnectAfterPromptRef.current) {
-                 setAgentState('idle');
-                 shouldDisconnectAfterPromptRef.current = false; // Reset
-                 // Disconnect after a brief pause
-                 setTimeout(() => {
-                     disconnect();
-                 }, 1000);
-                 URL.revokeObjectURL(audioUrl);
-                 return;
-             }
-
-             // AUTO-RESTART: Only if shouldAutoRestartRef is true
-             if (shouldAutoRestartRef.current) {
-                 setTimeout(() => {
-                     if (websocketRef.current?.readyState === WebSocket.OPEN) {
-                         startRecordingRef.current(); 
-                     } else {
-                         setAgentState('idle');
-                     }
-                 }, 500);
-             } else {
-                 setAgentState('idle');
-             }
             URL.revokeObjectURL(audioUrl);
+            // Process next audio in queue
+            processAudioQueue();
         };
 
-        audio.play().catch(e => console.error("Audio playback error", e));
+        audio.onerror = () => {
+            URL.revokeObjectURL(audioUrl);
+            // Continue with next audio even on error
+            processAudioQueue();
+        };
+
+        audio.play().catch(e => {
+            console.error("Audio playback error", e);
+            processAudioQueue();
+        });
     }, [disconnect]);
+
+    // Add audio to queue and start playing if not already
+    const queueAudio = useCallback((audioBlob: Blob) => {
+        audioQueueRef.current.push(audioBlob);
+        
+        // Start processing if not already playing
+        if (!isPlayingRef.current) {
+            processAudioQueue();
+        }
+    }, [processAudioQueue]);
 
     const connect = useCallback(() => {
         setStatus('connecting');
-        shouldDisconnectAfterPromptRef.current = false; // Reset on connect
+        shouldDisconnectAfterPromptRef.current = false;
+        audioQueueRef.current = []; // Clear queue on new connection
+        isPlayingRef.current = false;
+        
         const ws = new WebSocket('ws://localhost:8000/ws');
 
         ws.onopen = () => {
@@ -107,30 +150,54 @@ export function useVoiceAssistant() {
                 if (data.type === 'text') {
                     setMessages(prev => [...prev, { role: data.role, content: data.content }]);
                 } else if (data.type === 'review_details') {
-                    // Show Review Card
+                    // Show Review Card - update both state and ref
                     setReviewData(data.data);
+                    reviewDataRef.current = data.data;
+                } else if (data.type === 'end_session') {
+                    // Server signals conversation is complete - stop auto-restart loop
+                    console.log('Session ended by server');
+                    shouldAutoRestartRef.current = false;
+                    shouldDisconnectAfterPromptRef.current = true;
                 } else if (data.type === 'reservation_confirmed') {
                     shouldDisconnectAfterPromptRef.current = true;
+                    shouldAutoRestartRef.current = false; // Stop loop immediately
                     
-                    const payload = data.data || reviewData;
+                    // Prefer server-sent data, fallback to ref (not state due to closure issues)
+                    const payload = data.data || reviewDataRef.current;
                     
                     if (payload) {
                         const { saveReservation } = await import('@/app/actions');
                         try {
+                            console.log('Saving reservation with payload:', payload);
                             const result = await saveReservation(payload);
                             if (result.success) {
+                                console.log('Reservation saved successfully:', result.id);
+                                setSaveSuccess(true);
+                                setSaveError(null);
                                 setMessages(prev => [...prev, { role: 'ai', content: `[System]: Reservation Saved (ID: ${result.id})` }]);
                             } else {
-                                setMessages(prev => [...prev, { role: 'ai', content: '[System]: Error saving reservation' }]);
+                                console.error('Save failed:', result.error);
+                                setSaveError(result.error || 'Failed to save reservation');
+                                setSaveSuccess(false);
+                                setMessages(prev => [...prev, { role: 'ai', content: `[System]: Error - ${result.error}` }]);
                             }
                         } catch (err) {
                             console.error("Action Error", err);
+                            setSaveError('Failed to save reservation');
+                            setSaveSuccess(false);
+                            setMessages(prev => [...prev, { role: 'ai', content: '[System]: Failed to save reservation' }]);
                         }
+                        // Clear review data after processing
+                        setReviewData(null);
+                        reviewDataRef.current = null;
+                    } else {
+                        console.error("No payload for reservation confirmation");
+                        setMessages(prev => [...prev, { role: 'ai', content: '[System]: Error - No data to save' }]);
                     }
                 }
             } else if (event.data instanceof Blob) {
-                setAgentState('speaking');
-                playAudioCallback(event.data);
+                // Queue audio instead of playing immediately
+                queueAudio(event.data);
             }
         };
 
@@ -145,7 +212,7 @@ export function useVoiceAssistant() {
         };
 
         websocketRef.current = ws;
-    }, [playAudioCallback]);
+    }, [queueAudio]);
 
     const startRecording = useCallback(async () => {
         try {
@@ -158,7 +225,7 @@ export function useVoiceAssistant() {
             isRecordingRef.current = true;
 
             // Max Recording Timeout (Safety valve)
-            const MAX_DURATION = 5000; // 5 seconds
+            const MAX_DURATION = 15000; // 15 seconds for longer inputs like phone numbers
             const maxTimeout = setTimeout(() => {
                  if (isRecordingRef.current) {
                      console.log("Max duration reached, stopping...");
@@ -187,8 +254,8 @@ export function useVoiceAssistant() {
                 }
                 const rms = Math.sqrt(sum / input.length);
                 
-                // Threshold for silence (Lowered for sensitivity)
-                const THRESHOLD = 0.01; 
+                // Threshold for silence (lower = more sensitive)
+                const THRESHOLD = 0.008; // Slightly more sensitive
 
                 if (rms > THRESHOLD) {
                     silenceStart = Date.now(); // Reset silence timer
@@ -197,14 +264,14 @@ export function useVoiceAssistant() {
                         silenceTimerRef.current = null;
                     }
                 } else {
-                    // Check if silence duration exceeded 1.0 seconds (Faster response)
-                    if (Date.now() - silenceStart > 1000) {
+                    // Check if silence duration exceeded 2.0 seconds (increased for phone numbers)
+                    if (Date.now() - silenceStart > 2000) {
                         if (!silenceTimerRef.current) {
                             // Debounce the stop triggers
                             silenceTimerRef.current = setTimeout(() => {
                                 console.log("Silence detected, stopping recording...");
                                 stopRecording(); // VAD stop keeps loop enabled
-                            }, 500); 
+                            }, 800); // Increased debounce for longer pauses
                         }
                     }
                 }
@@ -242,8 +309,7 @@ export function useVoiceAssistant() {
         }
     }, [stopRecording]);
 
-    // Disconnect moved up
-    // Update ref so playAudioCallback can access the latest startRecording
+    // Update ref so processAudioQueue can access the latest startRecording
     useEffect(() => {
         startRecordingRef.current = startRecording;
     }, [startRecording]);
@@ -254,6 +320,8 @@ export function useVoiceAssistant() {
         agentState,
         permissionError,
         reviewData,
+        saveError,
+        saveSuccess,
         connect,
         disconnect,
         startRecording,
