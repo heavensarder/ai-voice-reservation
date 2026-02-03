@@ -85,3 +85,24 @@ export async function getConfig() {
     configs.forEach(c => configMap[c.key] = c.value);
     return configMap;
 }
+
+export async function verifyAdminPassword(password: string): Promise<{ success: boolean; error?: string }> {
+    if (!password) {
+        return { success: false, error: 'Password required' };
+    }
+
+    // Get the first admin (assuming single admin)
+    const admin = await prisma.admin.findFirst();
+    
+    if (!admin) {
+        return { success: false, error: 'No admin found' };
+    }
+
+    const isValid = bcrypt.compareSync(password, admin.password);
+    
+    if (!isValid) {
+        return { success: false, error: 'Invalid password' };
+    }
+
+    return { success: true };
+}

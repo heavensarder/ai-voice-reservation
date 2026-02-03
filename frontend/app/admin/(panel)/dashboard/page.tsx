@@ -7,12 +7,24 @@ function parseDate(dateStr: string): Date {
     return new Date(year, month - 1, day);
 }
 
-// Helper to format Date to DD-MM-YYYY
+// Helper to format Date to DD-MM-YYYY (for storage/comparison)
 function formatDate(date: Date): string {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
+}
+
+// Helper to format DD-MM-YYYY to "25 Feb 2026" (for display)
+function formatDisplayDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        const [day, month, year] = parts.map(Number);
+        return `${day} ${months[month - 1]} ${year}`;
+    }
+    return dateStr;
 }
 
 export default async function AdminDashboard() {
@@ -141,7 +153,7 @@ export default async function AdminDashboard() {
                                 <tbody>
                                     {upcomingReservations.slice(0, 10).map((res, idx) => (
                                         <tr key={res.id || idx} className="border-b border-border/50 hover:bg-muted/30">
-                                            <td className="py-3 px-4">{res.date}</td>
+                                            <td className="py-3 px-4">{formatDisplayDate(res.date)}</td>
                                             <td className="py-3 px-4">{res.time}</td>
                                             <td className="py-3 px-4 font-medium">{res.name}</td>
                                             <td className="py-3 px-4 font-mono text-xs">{res.phone}</td>
