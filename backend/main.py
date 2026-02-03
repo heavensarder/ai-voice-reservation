@@ -180,23 +180,31 @@ async def websocket_endpoint(websocket: WebSocket):
                         if not spoken_text:
                             spoken_text = "রিজার্ভেশন কনফার্ম করা হয়েছে। ধন্যবাদ।"
 
-                        # FALLBACK: If we don't have review data, try to extract from current response
+                        # FALLBACK: If we don't have review data, try to extract from history
                         if last_review_data is None:
                             logger.warning("last_review_data is None, attempting extraction from history...")
-                            # Check if there was a recent REVIEW_DETAILS in history
+                            # Search ALL AI messages for JSON with reservation fields
                             for msg in reversed(conversation_history):
                                 if isinstance(msg, dict) and msg.get('role') == 'assistant':
                                     content = msg.get('content', '')
-                                    if '[REVIEW_DETAILS]' in content and '{' in content:
+                                    if '{' in content and '}' in content:
                                         try:
                                             start = content.find('{')
                                             end = content.rfind('}')
                                             if start != -1 and end > start:
-                                                last_review_data = json.loads(content[start:end+1])
-                                                logger.info(f"Recovered review data from history: {last_review_data}")
-                                                break
-                                        except:
-                                            pass
+                                                json_str = content[start:end+1]
+                                                parsed = json.loads(json_str)
+                                                # Check if it has required reservation fields
+                                                if all(k in parsed for k in ['name', 'phone']):
+                                                    last_review_data = parsed
+                                                    logger.info(f"Recovered review data from history: {last_review_data}")
+                                                    break
+                                        except json.JSONDecodeError:
+                                            continue
+                        
+                        # Still no data? Log error but don't crash
+                        if last_review_data is None:
+                            logger.error("CRITICAL: Could not find reservation data anywhere!")
 
                         # Send text message
                         await websocket.send_json({
