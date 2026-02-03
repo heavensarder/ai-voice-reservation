@@ -98,12 +98,13 @@ export default function Home() {
               <span className="inline-block py-1 px-3 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-sm font-medium mb-4 backdrop-blur-md">
                 Establishment since 1998
               </span>
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-tight text-white">
-                Taste the <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-tight">
+                <span className="text-white">Taste the</span> <br />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-200">
                   Spirit of Bengal
                 </span>
               </h1>
+
             </motion.div>
 
             <motion.p
@@ -128,9 +129,9 @@ export default function Home() {
                 Reserve Now
                 <ArrowRight className="group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full font-bold text-lg hover:bg-white/20 transition-all">
+              <Link href="#menu" className="px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-full font-bold text-lg hover:bg-white/20 transition-all flex items-center justify-center">
                 View Full Menu
-              </button>
+              </Link>
             </motion.div>
           </div>
 
@@ -211,7 +212,7 @@ export default function Home() {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-emerald-600 font-bold uppercase tracking-wider text-sm block mb-2">Our Menu</span>
-            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6">Culinary Masterpieces</h2>
+            <h2 id="culinary-masterpieces" className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6">Culinary Masterpieces</h2>
             <p className="text-slate-500 text-lg">A curated selection of authentic Bengali dishes, prepared with love and tradition.</p>
           </div>
 
