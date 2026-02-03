@@ -7,6 +7,7 @@ import { clsx } from "clsx";
 import { logoutAdmin } from "@/app/admin/actions";
 
 const navItems = [
+  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/reservations", label: "Reservations", icon: CalendarDays },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
