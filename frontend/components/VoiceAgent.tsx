@@ -264,6 +264,22 @@ export default function VoiceAgent() {
                         </>
                     )}
 
+                    {/* End Session Button (Small, left of main button) */}
+                    <AnimatePresence>
+                        {status === 'connected' && (
+                            <motion.button
+                                initial={{ opacity: 0, scale: 0, x: 20 }}
+                                animate={{ opacity: 1, scale: 1, x: 0 }}
+                                exit={{ opacity: 0, scale: 0, x: 20 }}
+                                onClick={disconnect}
+                                className="absolute right-20 bottom-2 w-12 h-12 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg transition-colors border-2 border-red-400 z-10"
+                                title="End Session"
+                            >
+                                <Square fill="white" size={16} />
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
+
                     <button
                         onClick={handleMicClick}
                         disabled={status === 'connecting'}
