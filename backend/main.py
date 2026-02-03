@@ -75,10 +75,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 audio_data = message["bytes"]
                 logger.info(f"Received audio chunk: {len(audio_data)} bytes")
                 
+                # Check if audio is too small (likely noise or incomplete)
+                if len(audio_data) < 1000:
+                    logger.warning(f"Audio chunk too small ({len(audio_data)} bytes), skipping")
+                    continue
+                
                 transcript = await transcribe_audio(audio_data)
                 logger.info(f"Transcription result: '{transcript}'")
                 
-                if transcript:
+                if transcript and len(transcript.strip()) > 0:
                     logger.info(f"User: {transcript}")
                     
                     # Send buffer transcript to UI
@@ -242,6 +247,22 @@ async def websocket_endpoint(websocket: WebSocket):
                         audio_response = await synthesize_speech(ai_response_text)
                         if audio_response:
                             await websocket.send_bytes(audio_response)
+                
+                else:
+                    # Transcription failed or empty - ask user to repeat
+                    logger.warning("Empty or failed transcription, asking user to repeat")
+                    retry_text = "দুঃখিত, আমি বুঝতে পারিনি। অনুগ্রহ করে আবার বলুন।"
+                    
+                    await websocket.send_json({
+                        "type": "text",
+                        "role": "ai",
+                        "content": retry_text
+                    })
+                    
+                    # TTS for retry prompt
+                    retry_audio = await synthesize_speech(retry_text)
+                    if retry_audio:
+                        await websocket.send_bytes(retry_audio)
                         
     except WebSocketDisconnect:
         logger.info("Client disconnected")
