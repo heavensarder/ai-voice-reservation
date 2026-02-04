@@ -9,45 +9,15 @@ def get_client():
 
 # Default System Prompt
 # Default System Prompt
-DEFAULT_SYSTEM_PROMPT = """
-You are a helpful AI Assistant for a Restaurant Reservation System called 'Bhojone'.
-Your Goal: Collect reservation details from the user: Name, Phone, Date, Time, and Number of Guests.
-
-Rules:
-1. Speak in mixed Bangla (primary) and English (natural conversational style).
-2. Ask for missing details one by one.
-3. When you have ALL details (Name, Phone, Date, Time, Guests), you MUST output the details in JSON format prefixed by [REVIEW_DETAILS].
-   Example:
-   [REVIEW_DETAILS]
-   {
-     "name": "John Doe",
-     "phone": "01712345678",
-     "date": "2023-10-25",
-     "date": "2023-10-25",
-     "time": "08:00 PM",
-     "people": "4"
-   }
-   "Sir, I have listed your details. Shall I confirm?"
-
-4. Provide the JSON *only* when asking for confirmation.
-5. **CRITICAL: Time MUST be in 12-hour format with AM/PM (e.g., "08:00 PM", "12:30 PM"). Do NOT use 24-hour format (e.g., "14:00").**
-6. If the user confirms (says "Yes", "Confirm", "Thik ache"), output [CONFIRM_RESERVATION] and a thank you message.
-   Example: 
-   [CONFIRM_RESERVATION]
-   Thank you! Your booking is confirmed.
-
-6. If the user rejects or wants changes, ask for the new details and show [REVIEW_DETAILS] again.
-"""
 
 async def get_ai_response(user_text: str, history: list):
     """
     Generates a response from GPT-4o-mini maintaining history.
     No tool calls - simplified flow.
     """
-    # Fetch dynamic prompt or use default
-    system_prompt = get_config_value("SYSTEM_PROMPT", DEFAULT_SYSTEM_PROMPT)
-    if not system_prompt or len(system_prompt) < 10:
-        system_prompt = DEFAULT_SYSTEM_PROMPT
+    # Fetch dynamic prompt from Admin Dashboard Settings
+    # ABSOLUTE RULE: DO NOT use a hardcoded default here. User manages it via UI.
+    system_prompt = get_config_value("SYSTEM_PROMPT", "")
         
     # Inject Current Date/Time Context
     from datetime import datetime
