@@ -190,8 +190,13 @@ function ReservationsContent() {
             }
         }
 
-        // Sort by time
-        return result.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+        // Sort by time only if a specific date is filtered
+        if (date) {
+            return result.sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
+        }
+
+        // Otherwise return as is (default is createdAt desc from server)
+        return result;
     }, [allReservations, date, timeFilter, guestFilter]);
 
     // Calculate totals
