@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { format } from 'date-fns';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { format, parse } from 'date-fns';
+import { formatTo12Hour } from '@/utils/time';
 import { Calendar as CalendarIcon, Users, Clock, Phone, Trash2, Filter, X, RotateCcw } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,13 +16,21 @@ import { motion } from 'framer-motion';
 // Helper to parse time for sorting (converts "HH:MM AM/PM" to minutes from midnight)
 function parseTimeToMinutes(timeStr: string): number {
     if (!timeStr) return 0;
+
+    // Normalize to 12-hour format first (e.g., "02:30 PM")
+    const standardTime = formatTo12Hour(timeStr);
+
     try {
-        const parts = timeStr.trim().split(' ');
+        const parts = standardTime.trim().split(' ');
+        if (parts.length < 2) return 0;
+
         const [hours, minutes] = parts[0].split(':').map(Number);
         const isPM = parts[1]?.toUpperCase() === 'PM';
         let totalHours = hours;
+
         if (isPM && hours !== 12) totalHours += 12;
         if (!isPM && hours === 12) totalHours = 0;
+
         return totalHours * 60 + (minutes || 0);
     } catch {
         return 0;
@@ -62,6 +72,20 @@ const GUEST_OPTIONS = [
 ];
 
 export default function ReservationsPage() {
+    return (
+        <Suspense fallback={
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 animate-pulse">
+                <Clock className="w-12 h-12 mb-4 opacity-20" />
+                <span className="font-medium">Loading...</span>
+            </div>
+        }>
+            <ReservationsContent />
+        </Suspense>
+    );
+}
+
+function ReservationsContent() {
+    const searchParams = useSearchParams();
     const [date, setDate] = useState<Date | undefined>(undefined); // No date = show all
     const [allReservations, setAllReservations] = useState<any[]>([]);
     const [bookedDates, setBookedDates] = useState<Date[]>([]);
@@ -71,6 +95,22 @@ export default function ReservationsPage() {
     // Filters
     const [timeFilter, setTimeFilter] = useState('all');
     const [guestFilter, setGuestFilter] = useState('all');
+
+    // Initialize date from URL param
+    useEffect(() => {
+        const dateParam = searchParams.get('date');
+        if (dateParam) {
+            try {
+                // Parse "DD-MM-YYYY"
+                const parsedDate = parse(dateParam, 'dd-MM-yyyy', new Date());
+                if (!isNaN(parsedDate.getTime())) {
+                    setDate(parsedDate);
+                }
+            } catch (e) {
+                console.error("Invalid date param:", dateParam);
+            }
+        }
+    }, [searchParams]);
 
     // Fetch ALL reservations
     useEffect(() => {
@@ -365,8 +405,16 @@ export default function ReservationsPage() {
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className="flex flex-col">
                                                         <span className="text-3xl font-bold text-slate-800 tracking-tight group-hover:text-emerald-600 transition-colors">
-                                                            {res.time.split(' ')[0]}
-                                                            <span className="text-base text-slate-400 ml-1 decoration-0 align-top mt-1 inline-block">{res.time.split(' ')[1]}</span>
+                                                            {(() => {
+                                                                const formatted = formatTo12Hour(res.time);
+                                                                const [time, period] = formatted.split(' ');
+                                                                return (
+                                                                    <>
+                                                                        {time}
+                                                                        <span className="text-base text-slate-400 ml-1 decoration-0 align-top mt-1 inline-block">{period}</span>
+                                                                    </>
+                                                                );
+                                                            })()}
                                                         </span>
                                                         <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{formatDisplayDate(res.date)}</span>
                                                     </div>

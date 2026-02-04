@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { getReservations } from "@/app/actions";
+import { parseTimeToMinutes } from "@/utils/time";
 import { CalendarDays, Users, Clock, Phone } from "lucide-react";
 
 // Helper to parse DD-MM-YYYY to Date
@@ -35,7 +37,9 @@ export default async function AdminDashboard() {
 
     // Get all reservations for statistics
     const allReservations = await getReservations();
-    const todayReservations = allReservations.filter(r => r.date === todayStr);
+    const todayReservations = allReservations
+        .filter(r => r.date === todayStr)
+        .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
     // Get upcoming reservations (next 7 days)
     const nextWeek = new Date();
@@ -45,7 +49,11 @@ export default async function AdminDashboard() {
     const upcomingReservations = allReservations.filter(r => {
         const resDate = parseDate(r.date);
         return resDate >= today && resDate <= nextWeek;
-    }).sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime());
+    }).sort((a, b) => {
+        const dateDiff = parseDate(a.date).getTime() - parseDate(b.date).getTime();
+        if (dateDiff !== 0) return dateDiff;
+        return parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
+    });
 
     // Calculate total guests for today
     const todayGuests = todayReservations.reduce((sum, r) => sum + (parseInt(r.people) || 0), 0);
@@ -123,7 +131,7 @@ export default async function AdminDashboard() {
                                             <div className="text-sm font-bold">{res.time}</div>
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-slate-800 text-lg">{res.name}</h4>
+                                            <h4 className="font-bold text-slate-800 text-lg font-bangla">{res.name}</h4>
                                             <div className="flex items-center gap-3 text-xs font-medium text-slate-500 mt-1">
                                                 <span className="flex items-center gap-1">
                                                     <Phone className="w-3 h-3" />
@@ -146,7 +154,7 @@ export default async function AdminDashboard() {
                 <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-xl font-bold text-slate-800">Upcoming Reservations</h2>
-                        <button className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline">View All</button>
+                        <Link href="/admin/reservations" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline">View All</Link>
                     </div>
 
                     {upcomingReservations.length === 0 ? (
@@ -176,7 +184,7 @@ export default async function AdminDashboard() {
                                                 </span>
                                             </td>
                                             <td className="py-4 px-4">
-                                                <div className="font-bold text-slate-800">{res.name}</div>
+                                                <div className="font-bold text-slate-800 font-bangla">{res.name}</div>
                                                 <div className="text-slate-400 text-xs font-mono mt-0.5">{res.phone}</div>
                                             </td>
                                             <td className="py-4 px-4">

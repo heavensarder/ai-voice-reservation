@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar as CalendarIcon, Users, Phone, Clock, User, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { saveReservation } from '@/app/actions';
+import { formatTo12Hour } from '@/utils/time';
 
 interface ReservationFormProps {
     onSuccess?: () => void;
@@ -48,7 +49,7 @@ export default function ReservationForm({ onSuccess, onCancel }: ReservationForm
                 name: formData.name,
                 phone: formData.phone,
                 date: formData.date,
-                time: formData.time,
+                time: formatTo12Hour(formData.time), // Convert 24h input to 12h
                 people: formData.guests
             });
 

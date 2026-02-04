@@ -62,7 +62,7 @@ export async function updateConfig(prevState: any, formData: FormData) {
 
         const systemPrompt = formData.get('SYSTEM_PROMPT') as string;
         if (systemPrompt) {
-             await prisma.systemConfig.upsert({
+            await prisma.systemConfig.upsert({
                 where: { key: 'SYSTEM_PROMPT' },
                 update: { value: systemPrompt },
                 create: { key: 'SYSTEM_PROMPT', value: systemPrompt }
@@ -93,16 +93,36 @@ export async function verifyAdminPassword(password: string): Promise<{ success: 
 
     // Get the first admin (assuming single admin)
     const admin = await prisma.admin.findFirst();
-    
+
     if (!admin) {
         return { success: false, error: 'No admin found' };
     }
 
     const isValid = bcrypt.compareSync(password, admin.password);
-    
+
     if (!isValid) {
         return { success: false, error: 'Invalid password' };
     }
 
     return { success: true };
+}
+
+export async function getAdminProfile() {
+    const cookieStore = await cookies();
+    const session = cookieStore.get('admin_session');
+
+    if (!session) {
+        return null;
+    }
+
+    // Since we are using a simple cookie for this demo, we'll fetch the first admin.
+    // In a real app, you'd decode the token to get the user ID.
+    const admin = await prisma.admin.findFirst({
+        select: {
+            email: true,
+            id: true
+        }
+    });
+
+    return admin;
 }
