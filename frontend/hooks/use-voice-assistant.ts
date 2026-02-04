@@ -29,9 +29,20 @@ export function useVoiceAssistant() {
     // Audio queue system to prevent overlapping audio
     const audioQueueRef = useRef<Blob[]>([]);
     const isPlayingRef = useRef<boolean>(false);
+    const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
     // We need a stable reference to startRecording to call it from audio.onended
     const startRecordingRef = useRef<() => void>(() => { });
+
+    const stopPlaying = useCallback(() => {
+        if (currentAudioRef.current) {
+            currentAudioRef.current.pause();
+            currentAudioRef.current.currentTime = 0;
+            currentAudioRef.current = null;
+        }
+        isPlayingRef.current = false;
+        audioQueueRef.current = [];
+    }, []);
 
     const stopRecording = useCallback(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
@@ -55,16 +66,17 @@ export function useVoiceAssistant() {
             websocketRef.current = null;
         }
         stopRecording();
-        // Clear audio queue on disconnect
-        audioQueueRef.current = [];
-        isPlayingRef.current = false;
+        stopPlaying(); // Immediate audio stop
+        setAgentState('idle'); // Reset UI state immediately
         setStatus('disconnected');
-    }, [stopRecording]);
+    }, [stopRecording, stopPlaying]);
 
     const manualStop = useCallback(() => {
         shouldAutoRestartRef.current = false;
         stopRecording();
-    }, [stopRecording]);
+        stopPlaying(); // Stop audio if user manually cancels
+        setAgentState('idle'); // Reset UI state immediately
+    }, [stopRecording, stopPlaying]);
 
     // Process next audio in queue
     const processAudioQueue = useCallback(() => {
@@ -102,14 +114,17 @@ export function useVoiceAssistant() {
         const audioBlob = audioQueueRef.current.shift()!;
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
+        currentAudioRef.current = audio;
 
         audio.onended = () => {
+            currentAudioRef.current = null;
             URL.revokeObjectURL(audioUrl);
             // Process next audio in queue
             processAudioQueue();
         };
 
         audio.onerror = () => {
+            currentAudioRef.current = null;
             URL.revokeObjectURL(audioUrl);
             // Continue with next audio even on error
             processAudioQueue();

@@ -28,6 +28,10 @@ export default function VoiceAgent() {
 
 
     const handleMicClick = () => {
+        // Play ring sound
+        const audio = new Audio('/ring.mp3');
+        audio.play().catch(e => console.error("Error playing ring sound:", e));
+
         if (status === 'disconnected') {
             connect();
             return;
