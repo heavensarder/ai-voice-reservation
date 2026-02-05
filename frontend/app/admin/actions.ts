@@ -30,7 +30,13 @@ export async function loginAdmin(prevState: any, formData: FormData) {
     // In production, use a signed JWT or session token.
     // For this task, we'll store a simple secure flag. 
     // NOTE: Simple cookie for demonstration.
-    (await cookies()).set('admin_session', 'true', { httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 86400 });
+    (await cookies()).set('admin_session', 'true', { 
+        httpOnly: true, 
+        secure: process.env.NODE_ENV === 'production', 
+        sameSite: 'lax',
+        path: '/', 
+        maxAge: 86400 
+    });
 
     return { success: true };
 }
