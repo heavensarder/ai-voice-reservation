@@ -30,9 +30,11 @@ export async function loginAdmin(prevState: any, formData: FormData) {
     // In production, use a signed JWT or session token.
     // For this task, we'll store a simple secure flag. 
     // NOTE: Simple cookie for demonstration.
+    // COOKIE_SECURE can be set to 'false' if server is behind a proxy using HTTP internally
+    const isSecure = process.env.COOKIE_SECURE === 'false' ? false : process.env.NODE_ENV === 'production';
     (await cookies()).set('admin_session', 'true', { 
         httpOnly: true, 
-        secure: process.env.NODE_ENV === 'production', 
+        secure: isSecure, 
         sameSite: 'lax',
         path: '/', 
         maxAge: 86400 
