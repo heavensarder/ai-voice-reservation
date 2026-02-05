@@ -112,25 +112,36 @@ export function useVoiceAssistant() {
         setAgentState('speaking');
 
         const audioBlob = audioQueueRef.current.shift()!;
-        const audioUrl = URL.createObjectURL(audioBlob);
+        // Ensure correct MIME type for MP3 audio from backend
+        const typedBlob = new Blob([audioBlob], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(typedBlob);
+        console.log('Playing audio, blob size:', typedBlob.size, 'url:', audioUrl);
         const audio = new Audio(audioUrl);
         currentAudioRef.current = audio;
 
+        audio.oncanplaythrough = () => {
+            console.log('Audio can play through');
+        };
+
         audio.onended = () => {
+            console.log('Audio playback ended');
             currentAudioRef.current = null;
             URL.revokeObjectURL(audioUrl);
             // Process next audio in queue
             processAudioQueue();
         };
 
-        audio.onerror = () => {
+        audio.onerror = (e) => {
+            console.error('Audio error:', e, audio.error);
             currentAudioRef.current = null;
             URL.revokeObjectURL(audioUrl);
             // Continue with next audio even on error
             processAudioQueue();
         };
 
-        audio.play().catch(e => {
+        audio.play().then(() => {
+            console.log('Audio playback started successfully');
+        }).catch(e => {
             console.error("Audio playback error", e);
             processAudioQueue();
         });
@@ -160,16 +171,19 @@ export function useVoiceAssistant() {
         const wsHost = isLocalhost ? 'localhost:8000' : window.location.host;
         const wsUrl = `${wsProtocol}//${wsHost}/ws`;
         
+        console.log('Connecting to WebSocket:', wsUrl);
         const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
             setStatus('connected');
-            console.log('WS Connected');
+            console.log('WS Connected to:', wsUrl);
         };
 
         ws.onmessage = async (event) => {
+            console.log('WS Message received, type:', typeof event.data, 'isBlob:', event.data instanceof Blob);
             if (typeof event.data === 'string') {
                 const data = JSON.parse(event.data);
+                console.log('JSON message:', data.type);
                 if (data.type === 'text') {
                     setMessages(prev => [...prev, { role: data.role, content: data.content }]);
                 } else if (data.type === 'review_details') {
@@ -220,7 +234,10 @@ export function useVoiceAssistant() {
                 }
             } else if (event.data instanceof Blob) {
                 // Queue audio instead of playing immediately
+                console.log('Audio blob received, size:', event.data.size, 'type:', event.data.type);
                 queueAudio(event.data);
+            } else {
+                console.warn('Unknown message type:', typeof event.data, event.data);
             }
         };
 
