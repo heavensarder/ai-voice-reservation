@@ -152,7 +152,15 @@ export function useVoiceAssistant() {
         audioQueueRef.current = []; // Clear queue on new connection
         isPlayingRef.current = false;
 
-        const ws = new WebSocket('ws://localhost:8000/ws');
+        // Dynamically determine WebSocket URL based on current page location
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        // For localhost, use port 8000 (backend dev server)
+        // For production, use the same host (assumes backend is proxied or on same domain)
+        const wsHost = isLocalhost ? 'localhost:8000' : window.location.host;
+        const wsUrl = `${wsProtocol}//${wsHost}/ws`;
+        
+        const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
             setStatus('connected');
