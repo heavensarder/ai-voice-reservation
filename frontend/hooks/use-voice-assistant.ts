@@ -157,11 +157,77 @@ export function useVoiceAssistant() {
         }
     }, [processAudioQueue]);
 
-    const connect = useCallback(() => {
+    const connect = useCallback(async () => {
         setStatus('connecting');
+        setPermissionError(null);
         shouldDisconnectAfterPromptRef.current = false;
         audioQueueRef.current = []; // Clear queue on new connection
         isPlayingRef.current = false;
+
+        // Request microphone permission EARLY to trigger browser permission dialog
+        // This is crucial for Mac Chrome, Safari, iOS, and Android
+        try {
+            // Check if we can query permissions (not supported on all browsers)
+            if (navigator.permissions && navigator.permissions.query) {
+                try {
+                    const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+                    console.log('Microphone permission status:', permissionStatus.state);
+                    
+                    if (permissionStatus.state === 'denied') {
+                        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                        
+                        if (isSafari && isMac) {
+                            setPermissionError("Microphone blocked. Click Safari > Settings > Websites > Microphone and allow this site.");
+                        } else if (isMac) {
+                            setPermissionError("Microphone blocked. Click the 🔒 icon in address bar > Site settings > Microphone > Allow.");
+                        } else {
+                            setPermissionError("Microphone blocked. Click the 🔒 icon in address bar and allow microphone access.");
+                        }
+                        setStatus('disconnected');
+                        return;
+                    }
+                } catch (permErr) {
+                    // permissions.query not supported for microphone in this browser (e.g., Safari)
+                    console.log('Permission query not supported, will request directly');
+                }
+            }
+            
+            // Pre-request microphone access to trigger the browser permission dialog immediately
+            const testStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // Immediately stop the test stream - we just wanted to trigger the permission prompt
+            testStream.getTracks().forEach(track => track.stop());
+            console.log('Microphone permission granted');
+        } catch (err: any) {
+            console.error("Microphone permission denied on connect:", err);
+            
+            // Provide browser-specific error messages
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            
+            let errorMessage = "Microphone access required. ";
+            
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                if (isIOS) {
+                    errorMessage = "Microphone blocked. Go to Settings > Safari > Microphone and allow access.";
+                } else if (isSafari && isMac) {
+                    errorMessage = "Microphone blocked. Click Safari > Settings > Websites > Microphone and allow this site.";
+                } else if (isMac) {
+                    errorMessage = "Microphone blocked. Click the 🔒 icon in address bar > Site settings > Microphone > Allow.";
+                } else {
+                    errorMessage = "Microphone blocked. Click the 🔒 icon in address bar and allow microphone access.";
+                }
+            } else if (!navigator.mediaDevices) {
+                errorMessage = "Microphone requires HTTPS. Please use a secure connection.";
+            } else {
+                errorMessage = `Microphone error: ${err.message || 'Unknown error'}`;
+            }
+            
+            setPermissionError(errorMessage);
+            setStatus('disconnected');
+            return;
+        }
 
         // Dynamically determine WebSocket URL based on current page location
         const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -343,9 +409,44 @@ export function useVoiceAssistant() {
             mediaRecorder.start();
             setAgentState('listening');
             setPermissionError(null);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Mic Error", err);
-            setPermissionError("Microphone access denied. Please enable permission.");
+            
+            // Provide browser-specific error messages
+            let errorMessage = "Microphone access denied. ";
+            
+            // Check if it's a NotAllowedError (user denied) or NotFoundError (no mic)
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                // Check for Safari
+                const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                
+                if (isIOS) {
+                    errorMessage = "Microphone blocked. Go to Settings > Safari > Microphone and allow access.";
+                } else if (isSafari && isMac) {
+                    errorMessage = "Microphone blocked. Click Safari > Settings > Websites > Microphone and allow this site.";
+                } else if (isMac) {
+                    // Chrome on Mac
+                    errorMessage = "Microphone blocked. Click the 🔒 icon in address bar > Site settings > Microphone > Allow.";
+                } else {
+                    // Windows/Android Chrome
+                    errorMessage = "Microphone blocked. Click the 🔒 icon in address bar and allow microphone access.";
+                }
+            } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                errorMessage = "No microphone found. Please connect a microphone and try again.";
+            } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                errorMessage = "Microphone is in use by another app. Please close other apps using the mic.";
+            } else if (err.name === 'OverconstrainedError') {
+                errorMessage = "Microphone settings not supported. Please try a different browser.";
+            } else if (err.name === 'TypeError' && !navigator.mediaDevices) {
+                // HTTPS required
+                errorMessage = "Microphone requires HTTPS. Please use a secure connection.";
+            } else {
+                errorMessage = `Microphone error: ${err.message || 'Unknown error'}. Please check browser settings.`;
+            }
+            
+            setPermissionError(errorMessage);
         }
     }, [stopRecording]);
 
