@@ -3,6 +3,10 @@ import { getReservations } from "@/app/actions";
 import { parseTimeToMinutes } from "@/utils/time";
 import { CalendarDays, Users, Clock, Phone } from "lucide-react";
 
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Helper to parse DD-MM-YYYY to Date
 function parseDate(dateStr: string): Date {
     const [day, month, year] = dateStr.split('-').map(Number);
