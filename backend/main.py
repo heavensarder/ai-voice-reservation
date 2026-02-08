@@ -53,8 +53,21 @@ async def websocket_endpoint(websocket: WebSocket):
     conversation_history = []
     last_review_data = None  # Store review data for confirmation
     
-    # Send initial greeting
-    greeting_text = "নমস্কার! আমি আপনার রিজার্ভেশন অ্যাসিস্ট্যান্ট। আমি আপনাকে কীভাবে সাহায্য করতে পারি?"
+    # Send initial greeting with time-based salutation
+    from datetime import datetime
+    current_hour = datetime.now().hour
+    
+    # Bengali greetings based on time of day
+    if 5 <= current_hour < 12:
+        greeting = "সুপ্রভাত"  # Good morning (5 AM - 12 PM)
+    elif 12 <= current_hour < 17:
+        greeting = "শুভ অপরাহ্ন"  # Good afternoon (12 PM - 5 PM)
+    elif 17 <= current_hour < 21:
+        greeting = "শুভ সন্ধ্যা"  # Good evening (5 PM - 9 PM)
+    else:
+        greeting = "শুভ রাত্রি"  # Good night (9 PM - 5 AM)
+    
+    greeting_text = f"{greeting}! আমি আপনার রিজার্ভেশন অ্যাসিস্ট্যান্ট। আমি আপনাকে কীভাবে সাহায্য করতে পারি?"
     greeting_audio = await synthesize_speech(greeting_text)
     
     await websocket.send_json({
