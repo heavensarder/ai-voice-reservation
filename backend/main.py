@@ -55,7 +55,11 @@ async def websocket_endpoint(websocket: WebSocket):
     
     # Send initial greeting with time-based salutation
     from datetime import datetime
-    current_hour = datetime.now().hour
+    import pytz
+    
+    # Use Bangladesh timezone (UTC+6) regardless of server timezone
+    bd_tz = pytz.timezone('Asia/Dhaka')
+    current_hour = datetime.now(bd_tz).hour
     
     # Bengali greetings based on time of day
     if 5 <= current_hour < 12:
