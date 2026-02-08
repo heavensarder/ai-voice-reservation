@@ -294,8 +294,8 @@ export function useVoiceAssistant() {
                 }
                 const rms = Math.sqrt(sum / input.length);
 
-                // Threshold for silence (lower = more sensitive)
-                const THRESHOLD = 0.008; // Slightly more sensitive
+                // Threshold for silence (higher = filters more background noise)
+                const THRESHOLD = 0.015; // Optimized to reduce background noise sensitivity
 
                 if (rms > THRESHOLD) {
                     silenceStart = Date.now(); // Reset silence timer
@@ -304,14 +304,14 @@ export function useVoiceAssistant() {
                         silenceTimerRef.current = null;
                     }
                 } else {
-                    // Check if silence duration exceeded 2.0 seconds (increased for phone numbers)
-                    if (Date.now() - silenceStart > 2000) {
+                    // Check if silence duration exceeded 1.2 seconds (faster detection)
+                    if (Date.now() - silenceStart > 1200) {
                         if (!silenceTimerRef.current) {
                             // Debounce the stop triggers
                             silenceTimerRef.current = setTimeout(() => {
                                 console.log("Silence detected, stopping recording...");
                                 stopRecording(); // VAD stop keeps loop enabled
-                            }, 800); // Increased debounce for longer pauses
+                            }, 400); // Faster debounce for quicker response
                         }
                     }
                 }

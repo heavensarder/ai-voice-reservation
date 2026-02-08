@@ -36,7 +36,7 @@ async def get_ai_response(user_text: str, history: list):
         
         # Simple LLM call without tools
         response = await client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-3.5-turbo",
             messages=messages,
             temperature=0.7
         )
